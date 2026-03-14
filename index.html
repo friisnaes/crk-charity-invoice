@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotary Faktura</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-900: #0c1929;
+  --navy-800: #132238;
+  --navy-700: #1a2e4a;
+  --navy-600: #234068;
+  --navy-400: #4a6fa5;
+  --navy-200: #94b3d4;
+  --navy-100: #d0dfef;
+  --navy-50: #eef3f9;
+  --gold-500: #c59a2e;
+  --gold-400: #d4a843;
+  --gold-300: #e0be6a;
+  --surface: #f7f8fb;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --red-500: #ef4444;
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --green-500: #10b981;
+  --green-50: #ecfdf5;
+  --green-100: #d1fae5;
+  --blue-500: #3b82f6;
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --amber-500: #f59e0b;
+  --amber-50: #fffbeb;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--gray-800);
+  min-height: 100vh;
+}
+
+/* === LAYOUT === */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 220px;
+  background: var(--navy-900);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--navy-700);
+}
+
+.sidebar-brand h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--gold-400);
+}
+
+.sidebar-brand p {
+  font-size: 11px;
+  color: var(--navy-200);
+  margin-top: 2px;
+}
+
+.sidebar-nav { flex: 1; padding: 16px 10px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--navy-200);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { background: var(--navy-800); color: white; }
+.nav-item.active { background: var(--navy-700); color: white; font-weight: 600; }
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--navy-700);
+}
+
+.sidebar-footer .org-name {
+  font-size: 11px;
+  color: var(--navy-400);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 220px;
+  padding: 32px;
+  max-width: 1100px;
+}
+
+/* === TYPOGRAPHY === */
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* === CARDS === */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--navy-800); color: white; }
+.btn-primary:hover { background: var(--navy-900); }
+.btn-secondary { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-300); }
+.btn-secondary:hover { background: var(--gray-50); }
+.btn-success { background: var(--green-500); color: white; }
+.btn-success:hover { opacity: 0.9; }
+.btn-danger { background: var(--red-500); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-gold { background: var(--gold-500); color: white; }
+.btn-gold:hover { background: var(--gold-400); }
+
+/* === FORMS === */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--gray-800);
+  background: white;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--navy-400);
+  box-shadow: 0 0 0 3px rgba(74,111,165,0.12);
+}
+
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-row { display: grid; gap: 12px; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* === TABLES === */
+.table-wrap { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+thead th {
+  text-align: left;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-50);
+  color: var(--gray-700);
+}
+
+tbody tr:hover { background: var(--gray-50); }
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+/* === STATUS BADGES === */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-draft { background: var(--gray-100); color: var(--gray-600); }
+.badge-issued { background: var(--blue-100); color: var(--blue-500); }
+.badge-paid { background: var(--green-100); color: var(--green-500); }
+.badge-cancelled { background: var(--red-100); color: var(--red-500); }
+
+/* === STAT CARDS === */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 4px solid var(--gray-300);
+}
+
+.stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-500); }
+.stat-card .stat-value { font-size: 24px; font-weight: 700; color: var(--navy-900); margin-top: 4px; }
+.stat-card .stat-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+.stat-card.blue { border-left-color: var(--blue-500); }
+.stat-card.red { border-left-color: var(--red-500); }
+.stat-card.green { border-left-color: var(--green-500); }
+.stat-card.amber { border-left-color: var(--amber-500); }
+
+/* === MODAL === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: white;
+  border-radius: 14px;
+  width: 95%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--navy-900); }
+
+/* === INVOICE LINE ITEMS === */
+.line-items { margin: 16px 0; }
+
+.line-item-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1.2fr 1.2fr 40px;
+  gap: 8px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.line-item-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  font-weight: 600;
+  padding-bottom: 6px;
+}
+
+.line-item-total {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  color: var(--gray-700);
+  padding-right: 4px;
+}
+
+.remove-line {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.remove-line:hover { color: var(--red-500); background: var(--red-50); }
+
+/* === INVOICE TOTALS === */
+.invoice-totals {
+  border-top: 1px solid var(--gray-200);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.total-row.grand {
+  border-top: 2px solid var(--navy-900);
+  margin-top: 6px;
+  padding-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* === DETAIL VIEW === */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detail-label { font-size: 11px; text-transform: uppercase; color: var(--gray-500); letter-spacing: 0.5px; }
+.detail-value { font-size: 13px; color: var(--navy-900); margin-top: 2px; }
+
+.back-link {
+  font-size: 13px;
+  color: var(--gray-500);
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+.back-link:hover { color: var(--navy-600); }
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.alert-red { background: var(--red-50); border: 1px solid var(--red-100); color: var(--red-500); }
+.alert-green { background: var(--green-50); border: 1px solid var(--green-100); color: var(--green-500); }
+
+/* === VIEWS === */
+.view { display: none; }
+.view.active { display: block; }
+
+.action-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.filter-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-600);
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-btn.active { background: var(--navy-800); color: white; border-color: var(--navy-800); }
+
+.clickable { cursor: pointer; color: var(--navy-600); font-weight: 500; }
+.clickable:hover { text-decoration: underline; }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-brand h1, .sidebar-brand p, .nav-item span:not(.nav-icon),
+  .sidebar-footer .org-name { display: none; }
+  .sidebar-brand { padding: 16px 10px; text-align: center; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .main-content { margin-left: 60px; padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .line-item-row { grid-template-columns: 1fr; gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Rotary Faktura</h1>
+      <p>Faktureringssystem</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showView('dashboard')">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="showView('customers')">
+        <span class="nav-icon">👤</span><span>Kunder</span>
+      </button>
+      <button class="nav-item" onclick="showView('invoices')">
+        <span class="nav-icon">📄</span><span>Fakturaer</span>
+      </button>
+      <button class="nav-item" onclick="showView('settings')">
+        <span class="nav-icon">⚙️</span><span>Indstillinger</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="org-name" id="sidebarOrgName">Rotary Charity</div>
+      <button class="nav-item" onclick="showView('export')" style="margin:0">
+        <span class="nav-icon">💾</span><span>Eksport</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <button class="btn btn-primary" onclick="openInvoiceCreator()">+ Ny faktura</button>
+      </div>
+      <div class="stats-grid" id="dashboardStats"></div>
+      <div class="card">
+        <div class="card-header">Seneste fakturaer</div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Nr.</th><th>Kunde</th><th>Status</th><th class="text-right">Total</th><th>Forfald</th>
+          </tr></thead><tbody id="dashboardInvoices"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMERS ===== -->
+    <div class="view" id="view-customers">
+      <div class="page-header">
+        <h1 class="page-title">Kunder</h1>
+        <div class="action-bar">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-500);cursor:pointer">
+            <input type="checkbox" id="showArchivedCustomers" onchange="renderCustomers()"> Vis arkiverede
+          </label>
+          <button class="btn btn-primary" onclick="openCustomerModal()">+ Ny kunde</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Navn</th><th>Email</th><th>CVR</th><th>Telefon</th><th></th>
+          </tr></thead><tbody id="customerTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INVOICES LIST ===== -->
+    <div class="view" id="view-invoices">
+      <div class="page-header">
+        <h1 class="page-title">Fakturaer</h1>
+        <div class="action-bar">
+          <button class="btn btn-secondary btn-sm" onclick="exportCsv()">📥 CSV</button>
+          <button class="btn btn-primary" onclick="openInvoiceCreator()">+ Ny faktura</button>
+        </div>
+      </div>
+      <div class="filter-bar" id="invoiceFilters"></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Nr.</th><th>Kunde</th><th>Dato</th><th>Status</th><th class="text-right">Total</th><th>Forfald</th>
+          </tr></thead><tbody id="invoiceTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INVOICE CREATE/EDIT ===== -->
+    <div class="view" id="view-invoice-form">
+      <div class="page-header">
+        <h1 class="page-title" id="invoiceFormTitle">Ny faktura</h1>
+      </div>
+      <form id="invoiceForm" onsubmit="saveInvoice(event)">
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Fakturaoplysninger</h3>
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label class="form-label">Kunde *</label>
+              <select class="form-select" id="inv_customer" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fakturadato</label>
+              <input type="date" class="form-input" id="inv_date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Leveringsdato</label>
+              <input type="date" class="form-input" id="inv_delivery">
+            </div>
+          </div>
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label class="form-label">Betalingsfrist</label>
+              <input type="date" class="form-input" id="inv_due">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Betalingsbetingelser</label>
+              <input type="text" class="form-input" id="inv_terms" value="Netto 14 dage">
+            </div>
+            <div class="form-group">
+              <!-- VERIFICER MED REVISOR: momsmodel -->
+              <label class="form-label">Momssats</label>
+              <select class="form-select" id="inv_vat" onchange="onVatChange()">
+                <option value="25">25 % (standard)</option>
+                <option value="0">0 % (momsfri)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="vatNoteGroup" style="display:none">
+            <label class="form-label">Momsfri note (vises på PDF)</label>
+            <input type="text" class="form-input" id="inv_vat_note" placeholder="Fx: Momsfritaget jf. momslovens § ...">
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:13px;font-weight:600;color:var(--navy-900)">Fakturalinjer</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addLineItem()">+ Tilføj linje</button>
+          </div>
+          <div class="line-items">
+            <div class="line-item-row line-item-header">
+              <div>Beskrivelse</div><div>Antal</div><div>Enhedspris</div><div class="text-right">Total</div><div></div>
+            </div>
+            <div id="lineItemsContainer"></div>
+          </div>
+          <div class="invoice-totals">
+            <div class="total-row"><span>Subtotal ekskl. moms</span><span id="calcSubtotal">0,00 DKK</span></div>
+            <div class="total-row"><span id="calcVatLabel">Moms (25%)</span><span id="calcVat">0,00 DKK</span></div>
+            <div class="total-row grand"><span>Total inkl. moms</span><span id="calcTotal">0,00 DKK</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Bemærkninger (vises på faktura)</label>
+            <textarea class="form-textarea" id="inv_notes"></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="showView('invoices')">Annuller</button>
+          <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn">Opret kladde</button>
+        </div>
+        <input type="hidden" id="inv_editing_id">
+      </form>
+    </div>
+
+    <!-- ===== INVOICE DETAIL ===== -->
+    <div class="view" id="view-invoice-detail">
+      <div id="invoiceDetailContent"></div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="view" id="view-settings">
+      <div class="page-header">
+        <h1 class="page-title">Indstillinger</h1>
+      </div>
+      <form class="card" style="padding:20px;margin-bottom:16px;max-width:600px" onsubmit="saveSettings(event)">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Foreningsoplysninger</h3>
+        <div id="settingsMsg"></div>
+        <div class="form-group"><label class="form-label">Foreningsnavn</label>
+          <input class="form-input" id="set_name"></div>
+        <div class="form-group"><label class="form-label">Adresse</label>
+          <input class="form-input" id="set_address"></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">CVR-nummer</label>
+            <input class="form-input" id="set_cvr"></div>
+          <div class="form-group"><label class="form-label">Email</label>
+            <input class="form-input" id="set_email"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Telefon</label>
+          <input class="form-input" id="set_phone"></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">Bank reg.nr.</label>
+            <input class="form-input" id="set_bank_reg"></div>
+          <div class="form-group"><label class="form-label">Kontonummer</label>
+            <input class="form-input" id="set_bank_account"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:8px">Gem indstillinger</button>
+      </form>
+
+      <div class="card" style="padding:20px;max-width:600px;margin-bottom:16px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Revisionslog</h3>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAuditLog()">📋 Vis/skjul log</button>
+        <div id="auditLogContainer" style="display:none;margin-top:12px;max-height:300px;overflow-y:auto">
+          <table><thead><tr><th>Tidspunkt</th><th>Handling</th><th>Detaljer</th></tr></thead>
+          <tbody id="auditLogTable"></tbody></table>
+        </div>
+      </div>
+
+      <div class="card" style="padding:20px;max-width:600px;background:var(--gray-50)">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--gray-500)">Mulige version 2-funktioner</h3>
+        <p style="font-size:12px;color:var(--gray-400);line-height:1.6">
+          Email-afsendelse · Kreditnota-flow · Automatisk rykker · Flerbrugersystem ·
+          Kontoplan/bogføring · Momsindberetning · Bankintegration/MobilePay ·
+          EAN/OCR · Integration til Dinero/e-conomic · Logo-upload
+        </p>
+      </div>
+    </div>
+
+    <!-- ===== EXPORT ===== -->
+    <div class="view" id="view-export">
+      <div class="page-header">
+        <h1 class="page-title">Eksport & Backup</h1>
+      </div>
+      <div class="card" style="padding:20px;max-width:600px;margin-bottom:16px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Eksport</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="exportCsv()">📥 CSV-fakturaliste</button>
+          <button class="btn btn-secondary" onclick="exportBackup()">💾 Download komplet backup (JSON)</button>
+        </div>
+      </div>
+      <div class="card" style="padding:20px;max-width:600px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Gendan backup</h3>
+        <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          Indlæs en tidligere backup. <strong>Overskriver alle nuværende data.</strong>
+        </p>
+        <input type="file" accept=".json" id="restoreFile" onchange="restoreBackup()" style="font-size:13px">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal-overlay" id="customerModal" style="display:none">
+  <div class="modal">
+    <h2 class="modal-title" id="customerModalTitle">Ny kunde</h2>
+    <form onsubmit="saveCustomer(event)">
+      <div class="form-group"><label class="form-label">Navn *</label>
+        <input class="form-input" id="cust_name" required></div>
+      <div class="form-group"><label class="form-label">Adresse</label>
+        <input class="form-input" id="cust_address"></div>
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Email</label>
+          <input class="form-input" id="cust_email"></div>
+        <div class="form-group"><label class="form-label">CVR</label>
+          <input class="form-input" id="cust_cvr"></div>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Telefon</label>
+          <input class="form-input" id="cust_phone"></div>
+        <div class="form-group"><label class="form-label">Kontaktperson</label>
+          <input class="form-input" id="cust_contact"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Bemærkninger</label>
+        <textarea class="form-textarea" id="cust_notes"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Annuller</button>
+        <button type="submit" class="btn btn-primary">Gem</button>
+      </div>
+      <input type="hidden" id="cust_editing_id">
+    </form>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA LAYER - localStorage
+// ============================================================
+const STORAGE_KEY = 'rotary_faktura_data';
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return JSON.parse(raw);
+  return {
+    settings: {
+      org_name: 'Rotary Charity',
+      org_address: '',
+      org_cvr: '',
+      org_email: '',
+      org_phone: '',
+      org_bank_reg: '',
+      org_bank_account: '',
+    },
+    customers: [],
+    invoices: [],
+    nextInvoiceSeq: 1,
+    nextInvoiceYear: new Date().getFullYear(),
+    auditLog: [],
+    nextId: 1,
+  };
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function genId(data) {
+  const id = data.nextId || 1;
+  data.nextId = id + 1;
+  return id;
+}
+
+function audit(action, details) {
+  const data = loadData();
+  data.auditLog.unshift({
+    timestamp: new Date().toISOString(),
+    action,
+    details: details || '',
+  });
+  if (data.auditLog.length > 500) data.auditLog = data.auditLog.slice(0, 500);
+  saveData(data);
+}
+
+function getCustomerName(data, customerId) {
+  const c = data.customers.find(x => x.id === customerId);
+  return c ? c.name : '-';
+}
+
+// ============================================================
+// INVOICE NUMBERING — RC-YYYY-NNNN
+// VERIFICER MED REVISOR: nummersekvens
+// ============================================================
+function getNextInvoiceNumber(data) {
+  const year = new Date().getFullYear();
+  if (data.nextInvoiceYear !== year) {
+    data.nextInvoiceYear = year;
+    data.nextInvoiceSeq = 1;
+  }
+  const num = `RC-${year}-${String(data.nextInvoiceSeq).padStart(4, '0')}`;
+  data.nextInvoiceSeq++;
+  return num;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentView = 'dashboard';
+let invoiceFilter = '';
+
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'customers') renderCustomers();
+  if (name === 'invoices') renderInvoices();
+  if (name === 'settings') renderSettings();
+  if (name === 'export') {}
+  updateSidebarOrg();
+}
+
+function updateSidebarOrg() {
+  const data = loadData();
+  document.getElementById('sidebarOrgName').textContent = data.settings.org_name || 'Rotary Charity';
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const data = loadData();
+  const inv = data.invoices;
+  const today = new Date().toISOString().split('T')[0];
+
+  const open = inv.filter(i => i.status === 'issued');
+  const paid = inv.filter(i => i.status === 'paid');
+  const drafts = inv.filter(i => i.status === 'draft');
+  const overdue = open.filter(i => i.due_date && i.due_date < today);
+  const outstanding = open.reduce((s, i) => s + i.total, 0);
+  const paidTotal = paid.reduce((s, i) => s + i.total, 0);
+
+  document.getElementById('dashboardStats').innerHTML = `
+    <div class="stat-card blue"><div class="stat-label">Udestående</div>
+      <div class="stat-value">${fmtMoney(outstanding)}</div><div class="stat-sub">${open.length} åbne fakturaer</div></div>
+    <div class="stat-card red"><div class="stat-label">Forfaldne</div>
+      <div class="stat-value">${overdue.length}</div><div class="stat-sub">fakturaer overskredet</div></div>
+    <div class="stat-card green"><div class="stat-label">Betalt i alt</div>
+      <div class="stat-value">${fmtMoney(paidTotal)}</div><div class="stat-sub">${paid.length} fakturaer</div></div>
+    <div class="stat-card amber"><div class="stat-label">Kladder</div>
+      <div class="stat-value">${drafts.length}</div><div class="stat-sub">afventer udstedelse</div></div>
+  `;
+
+  const recent = [...inv].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 10);
+  document.getElementById('dashboardInvoices').innerHTML = recent.length === 0
+    ? '<tr><td colspan="5" class="text-center" style="padding:32px;color:var(--gray-400)">Ingen fakturaer endnu</td></tr>'
+    : recent.map(i => `<tr>
+      <td><span class="clickable" onclick="openInvoiceDetail(${i.id})">${i.invoice_number || 'Kladde #' + i.id}</span></td>
+      <td>${getCustomerName(data, i.customer_id)}</td>
+      <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+      <td class="text-right font-medium">${fmtMoney(i.total)} DKK</td>
+      <td>${i.due_date || '-'}</td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+function renderCustomers() {
+  const data = loadData();
+  const showArchived = document.getElementById('showArchivedCustomers')?.checked;
+  const list = data.customers.filter(c => showArchived ? c.archived : !c.archived);
+  document.getElementById('customerTable').innerHTML = list.length === 0
+    ? `<tr><td colspan="5" class="text-center" style="padding:32px;color:var(--gray-400)">${showArchived ? 'Ingen arkiverede kunder' : 'Ingen kunder endnu'}</td></tr>`
+    : list.map(c => `<tr>
+      <td class="font-medium" style="color:var(--navy-900)">${esc(c.name)}</td>
+      <td>${esc(c.email || '-')}</td>
+      <td>${esc(c.cvr || '-')}</td>
+      <td>${esc(c.phone || '-')}</td>
+      <td class="text-right">
+        <button class="btn btn-secondary btn-sm" onclick="openCustomerModal(${c.id})" style="margin-right:4px">Rediger</button>
+        <button class="btn btn-sm" style="color:var(--gray-500);background:none;border:none" onclick="toggleArchiveCustomer(${c.id})">
+          ${c.archived ? 'Genaktiver' : 'Arkivér'}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+function openCustomerModal(id) {
+  const modal = document.getElementById('customerModal');
+  if (id) {
+    const data = loadData();
+    const c = data.customers.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('customerModalTitle').textContent = 'Rediger kunde';
+    document.getElementById('cust_editing_id').value = id;
+    document.getElementById('cust_name').value = c.name || '';
+    document.getElementById('cust_address').value = c.address || '';
+    document.getElementById('cust_email').value = c.email || '';
+    document.getElementById('cust_cvr').value = c.cvr || '';
+    document.getElementById('cust_phone').value = c.phone || '';
+    document.getElementById('cust_contact').value = c.contact_person || '';
+    document.getElementById('cust_notes').value = c.notes || '';
+  } else {
+    document.getElementById('customerModalTitle').textContent = 'Ny kunde';
+    document.getElementById('cust_editing_id').value = '';
+    ['cust_name','cust_address','cust_email','cust_cvr','cust_phone','cust_contact','cust_notes'].forEach(id => document.getElementById(id).value = '');
+  }
+  modal.style.display = 'flex';
+  document.getElementById('cust_name').focus();
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+function saveCustomer(e) {
+  e.preventDefault();
+  const data = loadData();
+  const editId = document.getElementById('cust_editing_id').value;
+  const obj = {
+    name: document.getElementById('cust_name').value.trim(),
+    address: document.getElementById('cust_address').value.trim(),
+    email: document.getElementById('cust_email').value.trim(),
+    cvr: document.getElementById('cust_cvr').value.trim(),
+    phone: document.getElementById('cust_phone').value.trim(),
+    contact_person: document.getElementById('cust_contact').value.trim(),
+    notes: document.getElementById('cust_notes').value.trim(),
+  };
+  if (editId) {
+    const idx = data.customers.findIndex(c => c.id === parseInt(editId));
+    if (idx >= 0) {
+      data.customers[idx] = { ...data.customers[idx], ...obj, updated_at: new Date().toISOString() };
+      audit('customer_updated', obj.name);
+    }
+  } else {
+    obj.id = genId(data);
+    obj.archived = false;
+    obj.created_at = new Date().toISOString();
+    obj.updated_at = obj.created_at;
+    data.customers.push(obj);
+    audit('customer_created', obj.name);
+  }
+  saveData(data);
+  closeCustomerModal();
+  renderCustomers();
+}
+
+function toggleArchiveCustomer(id) {
+  const data = loadData();
+  const c = data.customers.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm(c.archived ? `Genaktiver "${c.name}"?` : `Arkivér "${c.name}"?`)) return;
+  c.archived = !c.archived;
+  c.updated_at = new Date().toISOString();
+  saveData(data);
+  audit(c.archived ? 'customer_archived' : 'customer_unarchived', c.name);
+  renderCustomers();
+}
+
+// ============================================================
+// INVOICES LIST
+// ============================================================
+function renderInvoices() {
+  const data = loadData();
+  const filters = ['', 'draft', 'issued', 'paid', 'cancelled'];
+  const labels = { '': 'Alle', draft: 'Kladde', issued: 'Udstedt', paid: 'Betalt', cancelled: 'Annulleret' };
+
+  document.getElementById('invoiceFilters').innerHTML = filters.map(f =>
+    `<button class="filter-btn ${invoiceFilter === f ? 'active' : ''}" onclick="invoiceFilter='${f}';renderInvoices()">${labels[f]}</button>`
+  ).join('');
+
+  let list = [...data.invoices];
+  if (invoiceFilter) list = list.filter(i => i.status === invoiceFilter);
+  list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  document.getElementById('invoiceTable').innerHTML = list.length === 0
+    ? '<tr><td colspan="6" class="text-center" style="padding:32px;color:var(--gray-400)">Ingen fakturaer</td></tr>'
+    : list.map(i => `<tr>
+      <td><span class="clickable" onclick="openInvoiceDetail(${i.id})">${i.invoice_number || 'Kladde #' + i.id}</span></td>
+      <td>${getCustomerName(data, i.customer_id)}</td>
+      <td>${i.invoice_date || '-'}</td>
+      <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+      <td class="text-right font-medium">${fmtMoney(i.total)} DKK</td>
+      <td>${i.due_date || '-'}</td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// INVOICE CREATOR / EDITOR
+// ============================================================
+function openInvoiceCreator(editId) {
+  const data = loadData();
+
+  // Populate customer dropdown
+  const sel = document.getElementById('inv_customer');
+  const activeCustomers = data.customers.filter(c => !c.archived);
+  sel.innerHTML = '<option value="">Vælg kunde...</option>' +
+    activeCustomers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+
+  if (editId) {
+    const inv = data.invoices.find(i => i.id === editId);
+    if (!inv || inv.status !== 'draft') return;
+    document.getElementById('invoiceFormTitle').textContent = 'Rediger kladde';
+    document.getElementById('invoiceSubmitBtn').textContent = 'Gem kladde';
+    document.getElementById('inv_editing_id').value = editId;
+    document.getElementById('inv_customer').value = inv.customer_id;
+    document.getElementById('inv_date').value = inv.invoice_date || '';
+    document.getElementById('inv_delivery').value = inv.delivery_date || '';
+    document.getElementById('inv_due').value = inv.due_date || '';
+    document.getElementById('inv_terms').value = inv.payment_terms || 'Netto 14 dage';
+    document.getElementById('inv_vat').value = inv.vat_rate;
+    document.getElementById('inv_vat_note').value = inv.vat_note || '';
+    document.getElementById('inv_notes').value = inv.notes || '';
+    onVatChange();
+
+    // Load line items
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    (inv.items || []).forEach(item => addLineItem(item));
+    if (!inv.items || inv.items.length === 0) addLineItem();
+  } else {
+    document.getElementById('invoiceFormTitle').textContent = 'Ny faktura';
+    document.getElementById('invoiceSubmitBtn').textContent = 'Opret kladde';
+    document.getElementById('inv_editing_id').value = '';
+    document.getElementById('inv_date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inv_delivery').value = '';
+    document.getElementById('inv_due').value = '';
+    document.getElementById('inv_terms').value = 'Netto 14 dage';
+    document.getElementById('inv_vat').value = '25';
+    document.getElementById('inv_vat_note').value = '';
+    document.getElementById('inv_notes').value = '';
+    onVatChange();
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    addLineItem();
+  }
+  recalcInvoice();
+  showView('invoice-form');
+}
+
+function addLineItem(item) {
+  const container = document.getElementById('lineItemsContainer');
+  const row = document.createElement('div');
+  row.className = 'line-item-row';
+  row.innerHTML = `
+    <input class="form-input li-desc" placeholder="Beskrivelse" value="${esc(item?.description || '')}">
+    <input type="number" class="form-input li-qty" min="0" step="any" value="${item?.quantity ?? 1}" oninput="recalcInvoice()">
+    <input type="number" class="form-input li-price" min="0" step="0.01" value="${item?.unit_price ?? 0}" oninput="recalcInvoice()">
+    <div class="line-item-total">0,00</div>
+    <button type="button" class="remove-line" onclick="this.parentElement.remove();recalcInvoice()">×</button>
+  `;
+  container.appendChild(row);
+  recalcInvoice();
+}
+
+function onVatChange() {
+  const vat = parseInt(document.getElementById('inv_vat').value);
+  document.getElementById('vatNoteGroup').style.display = vat === 0 ? 'block' : 'none';
+  recalcInvoice();
+}
+
+// VERIFICER MED REVISOR: momsberegning
+function recalcInvoice() {
+  const vatRate = parseInt(document.getElementById('inv_vat').value) || 0;
+  let subtotal = 0;
+  document.querySelectorAll('#lineItemsContainer .line-item-row').forEach(row => {
+    const qty = parseFloat(row.querySelector('.li-qty')?.value) || 0;
+    const price = parseFloat(row.querySelector('.li-price')?.value) || 0;
+    const lineTotal = qty * price;
+    subtotal += lineTotal;
+    const totalEl = row.querySelector('.line-item-total');
+    if (totalEl) totalEl.textContent = fmtMoney(lineTotal);
+  });
+  const vat = subtotal * vatRate / 100;
+  const total = subtotal + vat;
+  document.getElementById('calcSubtotal').textContent = fmtMoney(subtotal) + ' DKK';
+  document.getElementById('calcVatLabel').textContent = `Moms (${vatRate}%)`;
+  document.getElementById('calcVat').textContent = fmtMoney(vat) + ' DKK';
+  document.getElementById('calcTotal').textContent = fmtMoney(total) + ' DKK';
+}
+
+function saveInvoice(e) {
+  e.preventDefault();
+  const data = loadData();
+  const editId = document.getElementById('inv_editing_id').value;
+  const vatRate = parseInt(document.getElementById('inv_vat').value) || 0;
+
+  const items = [];
+  document.querySelectorAll('#lineItemsContainer .line-item-row').forEach(row => {
+    const desc = row.querySelector('.li-desc')?.value?.trim();
+    const qty = parseFloat(row.querySelector('.li-qty')?.value) || 0;
+    const price = parseFloat(row.querySelector('.li-price')?.value) || 0;
+    if (desc) items.push({ description: desc, quantity: qty, unit_price: price, vat_percent: vatRate, line_total: Math.round(qty * price * 100) / 100 });
+  });
+
+  if (items.length === 0) { alert('Tilføj mindst én linje med beskrivelse'); return; }
+
+  const subtotal = Math.round(items.reduce((s, i) => s + i.quantity * i.unit_price, 0) * 100) / 100;
+  const vat_amount = Math.round(subtotal * vatRate / 100 * 100) / 100;
+  const total = Math.round((subtotal + vat_amount) * 100) / 100;
+
+  const obj = {
+    customer_id: parseInt(document.getElementById('inv_customer').value),
+    invoice_date: document.getElementById('inv_date').value,
+    delivery_date: document.getElementById('inv_delivery').value,
+    due_date: document.getElementById('inv_due').value,
+    payment_terms: document.getElementById('inv_terms').value,
+    vat_rate: vatRate,
+    vat_note: document.getElementById('inv_vat_note').value.trim(),
+    notes: document.getElementById('inv_notes').value.trim(),
+    items, subtotal, vat_amount, total,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (editId) {
+    const idx = data.invoices.findIndex(i => i.id === parseInt(editId));
+    if (idx >= 0 && data.invoices[idx].status === 'draft') {
+      data.invoices[idx] = { ...data.invoices[idx], ...obj };
+      saveData(data);
+      audit('invoice_updated', 'Kladde #' + editId);
+      openInvoiceDetail(parseInt(editId));
+    }
+  } else {
+    obj.id = genId(data);
+    obj.status = 'draft';
+    obj.invoice_number = null;
+    obj.created_at = new Date().toISOString();
+    saveData(data);
+    data.invoices.push(obj);
+    saveData(data);
+    audit('invoice_created', 'Kladde #' + obj.id);
+    openInvoiceDetail(obj.id);
+  }
+}
+
+// ============================================================
+// INVOICE DETAIL
+// ============================================================
+function openInvoiceDetail(id) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+
+  let actions = `<button class="btn btn-secondary btn-sm" onclick="downloadPdf(${id})">📄 PDF</button>`;
+
+  if (inv.status === 'draft') {
+    actions += `
+      <button class="btn btn-secondary btn-sm" onclick="openInvoiceCreator(${id})">✏️ Rediger</button>
+      <button class="btn btn-primary btn-sm" onclick="issueInvoice(${id})">📤 Udsted</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${id})">Slet</button>
+    `;
+  }
+  if (inv.status === 'issued') {
+    actions += `
+      <button class="btn btn-success btn-sm" onclick="markPaid(${id})">✅ Betalt</button>
+      <button class="btn btn-danger btn-sm" onclick="cancelInvoice(${id})">❌ Annullér</button>
+    `;
+  }
+  if (inv.status === 'paid') {
+    actions += `<button class="btn btn-danger btn-sm" onclick="cancelInvoice(${id})">❌ Annullér</button>`;
+  }
+
+  const cancelAlert = inv.status === 'cancelled' && inv.cancel_reason
+    ? `<div class="alert alert-red"><strong>Annulleret:</strong> ${esc(inv.cancel_reason)}</div>` : '';
+
+  const vatNote = inv.vat_rate === 0
+    ? `<p style="font-size:12px;color:var(--gray-500);font-style:italic;margin-top:4px">${esc(inv.vat_note || 'Momsfritaget / momsfri opkrævning')}</p>` : '';
+
+  document.getElementById('invoiceDetailContent').innerHTML = `
+    <span class="back-link" onclick="showView('invoices')">← Tilbage til liste</span>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">${inv.invoice_number || 'Kladde #' + inv.id}</h1>
+        <span class="badge badge-${inv.status}" style="margin-top:6px">${statusLabel(inv.status)}</span>
+      </div>
+      <div class="action-bar">${actions}</div>
+    </div>
+    ${cancelAlert}
+    <div class="detail-grid">
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Kunde</div>
+        <div class="detail-value font-medium">${esc(cust.name || '-')}</div>
+        ${cust.address ? `<div class="detail-value">${esc(cust.address)}</div>` : ''}
+        ${cust.email ? `<div class="detail-value">${esc(cust.email)}</div>` : ''}
+        ${cust.cvr ? `<div class="detail-value">CVR: ${esc(cust.cvr)}</div>` : ''}
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Detaljer</div>
+        <div style="font-size:13px;margin-top:4px;line-height:1.8">
+          Fakturadato: ${inv.invoice_date || '-'}<br>
+          ${inv.delivery_date ? 'Levering: ' + inv.delivery_date + '<br>' : ''}
+          Forfald: ${inv.due_date || '-'}<br>
+          Betaling: ${esc(inv.payment_terms || '-')}<br>
+          Moms: ${inv.vat_rate}%
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Beskrivelse</th><th class="text-right">Antal</th><th class="text-right">Pris</th><th class="text-right">Moms %</th><th class="text-right">Total</th></tr></thead>
+          <tbody>
+            ${(inv.items || []).map(item => `<tr>
+              <td>${esc(item.description)}</td>
+              <td class="text-right">${item.quantity}</td>
+              <td class="text-right">${fmtMoney(item.unit_price)}</td>
+              <td class="text-right">${item.vat_percent}%</td>
+              <td class="text-right font-medium">${fmtMoney(item.line_total)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--gray-100);background:var(--gray-50);border-radius:0 0 12px 12px">
+        <div class="total-row"><span>Subtotal ekskl. moms</span><span>${fmtMoney(inv.subtotal)} DKK</span></div>
+        <div class="total-row"><span>Moms (${inv.vat_rate}%)</span><span>${fmtMoney(inv.vat_amount)} DKK</span></div>
+        <div class="total-row grand"><span>Total inkl. moms</span><span>${fmtMoney(inv.total)} DKK</span></div>
+        ${vatNote}
+      </div>
+    </div>
+    ${inv.notes ? `<div class="card" style="padding:16px"><div class="detail-label">Bemærkninger</div><div class="detail-value">${esc(inv.notes)}</div></div>` : ''}
+  `;
+  showView('invoice-detail');
+}
+
+// ============================================================
+// INVOICE ACTIONS
+// ============================================================
+function issueInvoice(id) {
+  if (!confirm('Udsted denne faktura?\nNummeret kan derefter ikke ændres.')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'draft') return;
+  if (!inv.items || inv.items.length === 0) { alert('Fakturaen skal have mindst én linje'); return; }
+
+  inv.invoice_number = getNextInvoiceNumber(data);
+  inv.status = 'issued';
+  inv.issued_at = new Date().toISOString();
+  if (!inv.invoice_date) inv.invoice_date = new Date().toISOString().split('T')[0];
+  if (!inv.due_date) {
+    const d = new Date(inv.invoice_date);
+    d.setDate(d.getDate() + 14);
+    inv.due_date = d.toISOString().split('T')[0];
+  }
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_issued', inv.invoice_number);
+  openInvoiceDetail(id);
+}
+
+function markPaid(id) {
+  if (!confirm('Markér som betalt?')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'issued') return;
+  inv.status = 'paid';
+  inv.paid_at = new Date().toISOString();
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_paid', inv.invoice_number);
+  openInvoiceDetail(id);
+}
+
+function cancelInvoice(id) {
+  const reason = prompt('Årsag til annullering:');
+  if (reason === null) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status === 'cancelled' || inv.status === 'draft') return;
+  inv.status = 'cancelled';
+  inv.cancelled_at = new Date().toISOString();
+  inv.cancel_reason = reason;
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_cancelled', (inv.invoice_number || 'Kladde') + ': ' + reason);
+  openInvoiceDetail(id);
+}
+
+function deleteInvoice(id) {
+  if (!confirm('Slet denne kladde?')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'draft') return;
+  data.invoices = data.invoices.filter(i => i.id !== id);
+  saveData(data);
+  audit('invoice_deleted', 'Kladde #' + id);
+  showView('invoices');
+}
+
+// ============================================================
+// PDF GENERATION — jsPDF
+// VERIFICER MED REVISOR: at alle lovpligtige felter er med
+// ============================================================
+function downloadPdf(id) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+  const s = data.settings;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const W = 210, M = 18;
+
+  // Header
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(s.org_name || 'Rotary Charity', M, 22);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100);
+  let hy = 30;
+  if (s.org_address) { doc.text(s.org_address, M, hy); hy += 4; }
+  if (s.org_cvr) { doc.text('CVR: ' + s.org_cvr, M, hy); hy += 4; }
+  if (s.org_email) { doc.text('Email: ' + s.org_email, M, hy); hy += 4; }
+  if (s.org_phone) { doc.text('Tlf: ' + s.org_phone, M, hy); hy += 4; }
+  doc.setTextColor(0);
+
+  // Title
+  const title = inv.status === 'cancelled' ? 'ANNULLERET FAKTURA' : (inv.invoice_number ? 'FAKTURA' : 'KLADDE');
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, W - M, 22, { align: 'right' });
+
+  if (inv.status === 'cancelled' && inv.cancel_reason) {
+    doc.setFontSize(8); doc.setTextColor(200, 0, 0);
+    doc.text('Annulleret: ' + inv.cancel_reason, W - M, 28, { align: 'right' });
+    doc.setTextColor(0);
+  }
+
+  // Customer
+  let cy = 55;
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text('Kunde:', M, cy); cy += 5;
+  doc.setFont('helvetica', 'normal');
+  if (cust.name) { doc.text(cust.name, M, cy); cy += 4; }
+  if (cust.address) { doc.text(cust.address, M, cy); cy += 4; }
+  if (cust.email) { doc.text(cust.email, M, cy); cy += 4; }
+  if (cust.cvr) { doc.text('CVR: ' + cust.cvr, M, cy); cy += 4; }
+
+  // Invoice info
+  const rx = 130;
+  let ry = 55;
+  doc.setFontSize(9);
+  const infoLines = [
+    ['Faktura nr:', inv.invoice_number || 'KLADDE'],
+    ['Dato:', inv.invoice_date || '-'],
+    inv.delivery_date ? ['Levering:', inv.delivery_date] : null,
+    ['Forfaldsdato:', inv.due_date || '-'],
+    ['Betaling:', inv.payment_terms || 'Netto 14 dage'],
+  ].filter(Boolean);
+
+  infoLines.forEach(([label, val]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, rx, ry);
+    doc.setFont('helvetica', 'normal');
+    doc.text(val, rx + 30, ry);
+    ry += 5;
+  });
+
+  // Table
+  let ty = Math.max(cy, ry) + 12;
+
+  // Header row
+  doc.setFillColor(240, 240, 240);
+  doc.rect(M, ty - 4, W - 2 * M, 7, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+  doc.text('Beskrivelse', M + 2, ty);
+  doc.text('Antal', 110, ty, { align: 'right' });
+  doc.text('Pris', 135, ty, { align: 'right' });
+  doc.text('Moms %', 155, ty, { align: 'right' });
+  doc.text('Total', W - M - 2, ty, { align: 'right' });
+  ty += 7;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  (inv.items || []).forEach(item => {
+    if (ty > 270) { doc.addPage(); ty = 20; }
+    doc.text(String(item.description || ''), M + 2, ty);
+    doc.text(String(item.quantity), 110, ty, { align: 'right' });
+    doc.text(fmtMoney(item.unit_price), 135, ty, { align: 'right' });
+    doc.text(item.vat_percent + '%', 155, ty, { align: 'right' });
+    doc.text(fmtMoney(item.line_total), W - M - 2, ty, { align: 'right' });
+    ty += 5.5;
+  });
+
+  // Separator
+  ty += 2;
+  doc.setDrawColor(200); doc.line(M, ty, W - M, ty); ty += 6;
+
+  // Totals
+  doc.setFontSize(9);
+  doc.text('Subtotal ekskl. moms:', 140, ty, { align: 'right' });
+  doc.text(fmtMoney(inv.subtotal) + ' DKK', W - M - 2, ty, { align: 'right' }); ty += 5;
+
+  const vatLabel = inv.vat_rate === 0 ? 'Moms: 0 %' : 'Moms (' + inv.vat_rate + '%):';
+  doc.text(vatLabel, 140, ty, { align: 'right' });
+  doc.text(fmtMoney(inv.vat_amount) + ' DKK', W - M - 2, ty, { align: 'right' }); ty += 6;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('Total inkl. moms:', 140, ty, { align: 'right' });
+  doc.text(fmtMoney(inv.total) + ' DKK', W - M - 2, ty, { align: 'right' }); ty += 8;
+
+  // Momsfri note
+  if (inv.vat_rate === 0) {
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(inv.vat_note || 'Momsfritaget / momsfri opkrævning', M, ty);
+    doc.setTextColor(0); ty += 8;
+  }
+
+  // Payment info
+  ty += 4;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('Betalingsoplysninger', M, ty); ty += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  if (s.org_bank_reg && s.org_bank_account) {
+    doc.text('Reg.nr.: ' + s.org_bank_reg + '  Konto: ' + s.org_bank_account, M, ty); ty += 4;
+  }
+  if (inv.invoice_number) {
+    doc.text('Ref.: ' + inv.invoice_number, M, ty); ty += 4;
+  }
+
+  if (inv.notes) {
+    ty += 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('Note:', M, ty); ty += 4;
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(inv.notes, W - 2 * M);
+    doc.text(lines, M, ty);
+  }
+
+  const filename = inv.invoice_number ? `faktura-${inv.invoice_number}.pdf` : `kladde-${inv.id}.pdf`;
+  doc.save(filename);
+  audit('pdf_downloaded', inv.invoice_number || 'Kladde #' + inv.id);
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  const data = loadData();
+  const s = data.settings;
+  document.getElementById('set_name').value = s.org_name || '';
+  document.getElementById('set_address').value = s.org_address || '';
+  document.getElementById('set_cvr').value = s.org_cvr || '';
+  document.getElementById('set_email').value = s.org_email || '';
+  document.getElementById('set_phone').value = s.org_phone || '';
+  document.getElementById('set_bank_reg').value = s.org_bank_reg || '';
+  document.getElementById('set_bank_account').value = s.org_bank_account || '';
+  document.getElementById('settingsMsg').innerHTML = '';
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+  const data = loadData();
+  data.settings.org_name = document.getElementById('set_name').value.trim();
+  data.settings.org_address = document.getElementById('set_address').value.trim();
+  data.settings.org_cvr = document.getElementById('set_cvr').value.trim();
+  data.settings.org_email = document.getElementById('set_email').value.trim();
+  data.settings.org_phone = document.getElementById('set_phone').value.trim();
+  data.settings.org_bank_reg = document.getElementById('set_bank_reg').value.trim();
+  data.settings.org_bank_account = document.getElementById('set_bank_account').value.trim();
+  saveData(data);
+  audit('settings_updated');
+  updateSidebarOrg();
+  document.getElementById('settingsMsg').innerHTML = '<div class="alert alert-green">Indstillinger gemt</div>';
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+function toggleAuditLog() {
+  const el = document.getElementById('auditLogContainer');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') {
+    const data = loadData();
+    document.getElementById('auditLogTable').innerHTML = data.auditLog.slice(0, 100).map(l =>
+      `<tr><td style="font-size:11px;white-space:nowrap;color:var(--gray-500)">${l.timestamp?.replace('T', ' ').substring(0, 19)}</td>
+       <td style="font-size:12px;font-weight:500">${esc(l.action)}</td>
+       <td style="font-size:12px;color:var(--gray-600);max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(l.details || '-')}</td></tr>`
+    ).join('');
+  }
+}
+
+// ============================================================
+// EXPORT / BACKUP
+// ============================================================
+// VERIFICER MED REVISOR: at CSV-format dækker behov
+function exportCsv() {
+  const data = loadData();
+  const headers = ['Fakturanr', 'Status', 'Kunde', 'Kunde CVR', 'Fakturadato', 'Forfaldsdato', 'Betaling', 'Momssats', 'Subtotal', 'Moms', 'Total', 'Note'];
+  const rows = data.invoices.map(i => {
+    const c = data.customers.find(x => x.id === i.customer_id) || {};
+    return [i.invoice_number || '', i.status, c.name || '', c.cvr || '', i.invoice_date || '', i.due_date || '',
+      i.payment_terms || '', i.vat_rate, i.subtotal, i.vat_amount, i.total, i.notes || ''];
+  });
+  const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.map(csvEsc).join(';'))].join('\n');
+  downloadFile(csv, `fakturaer-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8');
+  audit('export_csv');
+}
+
+function exportBackup() {
+  const data = loadData();
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(json, `rotary-backup-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+  audit('backup_downloaded');
+}
+
+function restoreBackup() {
+  const file = document.getElementById('restoreFile').files[0];
+  if (!file) return;
+  if (!confirm('ADVARSEL: Dette overskriver ALLE nuværende data.\n\nEr du sikker?')) {
+    document.getElementById('restoreFile').value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.customers || !data.invoices || !data.settings) throw new Error('Ugyldig backup-fil');
+      saveData(data);
+      audit('backup_restored');
+      alert('Backup gendannet!');
+      showView('dashboard');
+    } catch (err) {
+      alert('Fejl: Kunne ikke læse backup-filen.\n' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtMoney(n) {
+  return Number(n || 0).toLocaleString('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function statusLabel(s) {
+  return { draft: 'Kladde', issued: 'Udstedt', paid: 'Betalt', cancelled: 'Annulleret' }[s] || s;
+}
+
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function csvEsc(val) {
+  const s = String(val);
+  return (s.includes(';') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderDashboard();
+updateSidebarOrg();
+</script>
+</body>
+</html>
