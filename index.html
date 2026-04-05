@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotary Faktura</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-900: #0c1929;
+  --navy-800: #132238;
+  --navy-700: #1a2e4a;
+  --navy-600: #234068;
+  --navy-400: #4a6fa5;
+  --navy-200: #94b3d4;
+  --navy-100: #d0dfef;
+  --navy-50: #eef3f9;
+  --gold-500: #c59a2e;
+  --gold-400: #d4a843;
+  --gold-300: #e0be6a;
+  --surface: #f7f8fb;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --red-500: #ef4444;
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --green-500: #10b981;
+  --green-50: #ecfdf5;
+  --green-100: #d1fae5;
+  --blue-500: #3b82f6;
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --amber-500: #f59e0b;
+  --amber-50: #fffbeb;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--gray-800);
+  min-height: 100vh;
+}
+
+/* === LAYOUT === */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 220px;
+  background: var(--navy-900);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--navy-700);
+}
+
+.sidebar-brand h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--gold-400);
+}
+
+.sidebar-brand p {
+  font-size: 11px;
+  color: var(--navy-200);
+  margin-top: 2px;
+}
+
+.sidebar-nav { flex: 1; padding: 16px 10px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--navy-200);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { background: var(--navy-800); color: white; }
+.nav-item.active { background: var(--navy-700); color: white; font-weight: 600; }
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--navy-700);
+}
+
+.sidebar-footer .org-name {
+  font-size: 11px;
+  color: var(--navy-400);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 220px;
+  padding: 32px;
+  max-width: 1100px;
+}
+
+/* === TYPOGRAPHY === */
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* === CARDS === */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--navy-800); color: white; }
+.btn-primary:hover { background: var(--navy-900); }
+.btn-secondary { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-300); }
+.btn-secondary:hover { background: var(--gray-50); }
+.btn-success { background: var(--green-500); color: white; }
+.btn-success:hover { opacity: 0.9; }
+.btn-danger { background: var(--red-500); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-gold { background: var(--gold-500); color: white; }
+.btn-gold:hover { background: var(--gold-400); }
+
+/* === FORMS === */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--gray-800);
+  background: white;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--navy-400);
+  box-shadow: 0 0 0 3px rgba(74,111,165,0.12);
+}
+
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-row { display: grid; gap: 12px; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* === TABLES === */
+.table-wrap { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+thead th {
+  text-align: left;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gray-50);
+  color: var(--gray-700);
+}
+
+tbody tr:hover { background: var(--gray-50); }
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+/* === STATUS BADGES === */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-draft { background: var(--gray-100); color: var(--gray-600); }
+.badge-issued { background: var(--blue-100); color: var(--blue-500); }
+.badge-paid { background: var(--green-100); color: var(--green-500); }
+.badge-cancelled { background: var(--red-100); color: var(--red-500); }
+.badge-credit { background: #fef3c7; color: #b45309; }
+.badge-reminder { background: #fce7f3; color: #be185d; }
+
+/* === STAT CARDS === */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 4px solid var(--gray-300);
+}
+
+.stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-500); }
+.stat-card .stat-value { font-size: 24px; font-weight: 700; color: var(--navy-900); margin-top: 4px; }
+.stat-card .stat-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+.stat-card.blue { border-left-color: var(--blue-500); }
+.stat-card.red { border-left-color: var(--red-500); }
+.stat-card.green { border-left-color: var(--green-500); }
+.stat-card.amber { border-left-color: var(--amber-500); }
+
+/* === MODAL === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: white;
+  border-radius: 14px;
+  width: 95%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--navy-900); }
+
+/* === INVOICE LINE ITEMS === */
+.line-items { margin: 16px 0; }
+
+.line-item-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1.2fr 1.2fr 40px;
+  gap: 8px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.line-item-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  font-weight: 600;
+  padding-bottom: 6px;
+}
+
+.line-item-total {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  color: var(--gray-700);
+  padding-right: 4px;
+}
+
+.remove-line {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.remove-line:hover { color: var(--red-500); background: var(--red-50); }
+
+/* === INVOICE TOTALS === */
+.invoice-totals {
+  border-top: 1px solid var(--gray-200);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.total-row.grand {
+  border-top: 2px solid var(--navy-900);
+  margin-top: 6px;
+  padding-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* === DETAIL VIEW === */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detail-label { font-size: 11px; text-transform: uppercase; color: var(--gray-500); letter-spacing: 0.5px; }
+.detail-value { font-size: 13px; color: var(--navy-900); margin-top: 2px; }
+
+.back-link {
+  font-size: 13px;
+  color: var(--gray-500);
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+.back-link:hover { color: var(--navy-600); }
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.alert-red { background: var(--red-50); border: 1px solid var(--red-100); color: var(--red-500); }
+.alert-green { background: var(--green-50); border: 1px solid var(--green-100); color: var(--green-500); }
+
+/* === VIEWS === */
+.view { display: none; }
+.view.active { display: block; }
+
+.action-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.filter-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-600);
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-btn.active { background: var(--navy-800); color: white; border-color: var(--navy-800); }
+
+.clickable { cursor: pointer; color: var(--navy-600); font-weight: 500; }
+.clickable:hover { text-decoration: underline; }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-brand h1, .sidebar-brand p, .nav-item span:not(.nav-icon),
+  .sidebar-footer .org-name { display: none; }
+  .sidebar-brand { padding: 16px 10px; text-align: center; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .main-content { margin-left: 60px; padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .line-item-row { grid-template-columns: 1fr; gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Rotary Faktura</h1>
+      <p>Faktureringssystem</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showView('dashboard')">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="showView('customers')">
+        <span class="nav-icon">👤</span><span>Kunder</span>
+      </button>
+      <button class="nav-item" onclick="showView('invoices')">
+        <span class="nav-icon">📄</span><span>Fakturaer</span>
+      </button>
+      <button class="nav-item" onclick="showView('reminders')">
+        <span class="nav-icon">⚠️</span><span>Rykkere</span>
+      </button>
+      <button class="nav-item" onclick="showView('settings')">
+        <span class="nav-icon">⚙️</span><span>Indstillinger</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="org-name" id="sidebarOrgName">Charlottenlund Rotary Charity</div>
+      <button class="nav-item" onclick="showView('export')" style="margin:0">
+        <span class="nav-icon">💾</span><span>Eksport</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <button class="btn btn-primary" onclick="openInvoiceCreator()">+ Ny faktura</button>
+      </div>
+      <div class="stats-grid" id="dashboardStats"></div>
+      <div class="card">
+        <div class="card-header">Seneste fakturaer</div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Nr.</th><th>Kunde</th><th>Status</th><th class="text-right">Total</th><th>Forfald</th>
+          </tr></thead><tbody id="dashboardInvoices"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMERS ===== -->
+    <div class="view" id="view-customers">
+      <div class="page-header">
+        <h1 class="page-title">Kunder</h1>
+        <div class="action-bar">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-500);cursor:pointer">
+            <input type="checkbox" id="showArchivedCustomers" onchange="renderCustomers()"> Vis arkiverede
+          </label>
+          <button class="btn btn-primary" onclick="openCustomerModal()">+ Ny kunde</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Navn</th><th>Email</th><th>CVR</th><th>Telefon</th><th></th>
+          </tr></thead><tbody id="customerTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INVOICES LIST ===== -->
+    <div class="view" id="view-invoices">
+      <div class="page-header">
+        <h1 class="page-title">Fakturaer</h1>
+        <div class="action-bar">
+          <button class="btn btn-secondary btn-sm" onclick="exportCsv()">📥 CSV</button>
+          <button class="btn btn-primary" onclick="openInvoiceCreator()">+ Ny faktura</button>
+        </div>
+      </div>
+      <div class="filter-bar" id="invoiceFilters"></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Nr.</th><th>Kunde</th><th>Dato</th><th>Status</th><th class="text-right">Total</th><th>Forfald</th>
+          </tr></thead><tbody id="invoiceTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INVOICE CREATE/EDIT ===== -->
+    <div class="view" id="view-invoice-form">
+      <div class="page-header">
+        <h1 class="page-title" id="invoiceFormTitle">Ny faktura</h1>
+      </div>
+      <form id="invoiceForm" onsubmit="saveInvoice(event)">
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Fakturaoplysninger</h3>
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label class="form-label">Kunde *</label>
+              <select class="form-select" id="inv_customer" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fakturadato</label>
+              <input type="date" class="form-input" id="inv_date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Leveringsdato</label>
+              <input type="date" class="form-input" id="inv_delivery">
+            </div>
+          </div>
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label class="form-label">Betalingsfrist</label>
+              <input type="date" class="form-input" id="inv_due">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Betalingsbetingelser</label>
+              <input type="text" class="form-input" id="inv_terms" value="Netto 14 dage">
+            </div>
+            <div class="form-group">
+              <!-- VERIFICER MED REVISOR: momsmodel -->
+              <label class="form-label">Momssats</label>
+              <select class="form-select" id="inv_vat" onchange="onVatChange()">
+                <option value="25">25 % (standard)</option>
+                <option value="0">0 % (momsfri)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="vatNoteGroup" style="display:none">
+            <label class="form-label">Momsfri note (vises på PDF)</label>
+            <input type="text" class="form-input" id="inv_vat_note" placeholder="Fx: Momsfritaget jf. momslovens § ...">
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:13px;font-weight:600;color:var(--navy-900)">Fakturalinjer</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addLineItem()">+ Tilføj linje</button>
+          </div>
+          <div class="line-items">
+            <div class="line-item-row line-item-header">
+              <div>Beskrivelse</div><div>Antal</div><div>Enhedspris</div><div class="text-right">Total</div><div></div>
+            </div>
+            <div id="lineItemsContainer"></div>
+          </div>
+          <div class="invoice-totals">
+            <div class="total-row"><span>Subtotal ekskl. moms</span><span id="calcSubtotal">0,00 DKK</span></div>
+            <div class="total-row"><span id="calcVatLabel">Moms (25%)</span><span id="calcVat">0,00 DKK</span></div>
+            <div class="total-row grand"><span>Total inkl. moms</span><span id="calcTotal">0,00 DKK</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Bemærkninger (vises på faktura)</label>
+            <textarea class="form-textarea" id="inv_notes"></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="showView('invoices')">Annuller</button>
+          <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn">Opret kladde</button>
+        </div>
+        <input type="hidden" id="inv_editing_id">
+      </form>
+    </div>
+
+    <!-- ===== INVOICE DETAIL ===== -->
+    <div class="view" id="view-invoice-detail">
+      <div id="invoiceDetailContent"></div>
+    </div>
+
+    <!-- ===== REMINDERS (RYKKERE) ===== -->
+    <div class="view" id="view-reminders">
+      <div class="page-header">
+        <h1 class="page-title">Rykkere</h1>
+      </div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Forfaldne fakturaer der ikke er betalt. Klik på en faktura for at sende rykker.</p>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Nr.</th><th>Kunde</th><th>Forfald</th><th>Dage over</th><th class="text-right">Beløb</th><th>Rykkere sendt</th><th></th>
+          </tr></thead><tbody id="reminderTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="view" id="view-settings">
+      <div class="page-header">
+        <h1 class="page-title">Indstillinger</h1>
+      </div>
+      <form class="card" style="padding:20px;margin-bottom:16px;max-width:600px" onsubmit="saveSettings(event)">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Foreningsoplysninger</h3>
+        <div id="settingsMsg"></div>
+        <div class="form-group"><label class="form-label">Foreningsnavn</label>
+          <input class="form-input" id="set_name"></div>
+        <div class="form-group"><label class="form-label">Adresse</label>
+          <input class="form-input" id="set_address"></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">CVR-nummer</label>
+            <input class="form-input" id="set_cvr"></div>
+          <div class="form-group"><label class="form-label">Email</label>
+            <input class="form-input" id="set_email"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Telefon</label>
+          <input class="form-input" id="set_phone"></div>
+        <div class="form-group"><label class="form-label">Logo URL (vises på PDF)</label>
+          <input class="form-input" id="set_logo_url" placeholder="https://..."></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">Bank reg.nr.</label>
+            <input class="form-input" id="set_bank_reg"></div>
+          <div class="form-group"><label class="form-label">Kontonummer</label>
+            <input class="form-input" id="set_bank_account"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:8px">Gem indstillinger</button>
+      </form>
+
+      <div class="card" style="padding:20px;max-width:600px;margin-bottom:16px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Revisionslog</h3>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAuditLog()">📋 Vis/skjul log</button>
+        <div id="auditLogContainer" style="display:none;margin-top:12px;max-height:300px;overflow-y:auto">
+          <table><thead><tr><th>Tidspunkt</th><th>Handling</th><th>Detaljer</th></tr></thead>
+          <tbody id="auditLogTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EXPORT ===== -->
+    <div class="view" id="view-export">
+      <div class="page-header">
+        <h1 class="page-title">Eksport & Backup</h1>
+      </div>
+      <div class="card" style="padding:20px;max-width:600px;margin-bottom:16px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Eksport</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="exportCsv()">📥 CSV-fakturaliste</button>
+          <button class="btn btn-secondary" onclick="exportBackup()">💾 Download komplet backup (JSON)</button>
+        </div>
+      </div>
+      <div class="card" style="padding:20px;max-width:600px">
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--navy-900)">Gendan backup</h3>
+        <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px">
+          Indlæs en tidligere backup. <strong>Overskriver alle nuværende data.</strong>
+        </p>
+        <input type="file" accept=".json" id="restoreFile" onchange="restoreBackup()" style="font-size:13px">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal-overlay" id="customerModal" style="display:none">
+  <div class="modal">
+    <h2 class="modal-title" id="customerModalTitle">Ny kunde</h2>
+    <form onsubmit="saveCustomer(event)">
+      <div class="form-group"><label class="form-label">Navn *</label>
+        <input class="form-input" id="cust_name" required></div>
+      <div class="form-group"><label class="form-label">Adresse</label>
+        <input class="form-input" id="cust_address"></div>
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Email</label>
+          <input class="form-input" id="cust_email"></div>
+        <div class="form-group"><label class="form-label">CVR</label>
+          <input class="form-input" id="cust_cvr"></div>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group"><label class="form-label">Telefon</label>
+          <input class="form-input" id="cust_phone"></div>
+        <div class="form-group"><label class="form-label">Kontaktperson</label>
+          <input class="form-input" id="cust_contact"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Bemærkninger</label>
+        <textarea class="form-textarea" id="cust_notes"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Annuller</button>
+        <button type="submit" class="btn btn-primary">Gem</button>
+      </div>
+      <input type="hidden" id="cust_editing_id">
+    </form>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA LAYER - localStorage
+// ============================================================
+const STORAGE_KEY = 'rotary_faktura_data';
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return JSON.parse(raw);
+  return {
+    settings: {
+      org_name: 'Charlottenlund Rotary Charity',
+      org_address: '',
+      org_cvr: '',
+      org_email: '',
+      org_phone: '',
+      org_bank_reg: '',
+      org_bank_account: '',
+      logo_url: 'https://friisnaes.github.io/crk_charity_logo.png',
+    },
+    customers: [],
+    invoices: [],
+    creditNotes: [],
+    nextInvoiceSeq: 1,
+    nextInvoiceYear: new Date().getFullYear(),
+    nextCreditNoteSeq: 1,
+    nextCreditNoteYear: new Date().getFullYear(),
+    auditLog: [],
+    nextId: 1,
+  };
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function genId(data) {
+  const id = data.nextId || 1;
+  data.nextId = id + 1;
+  return id;
+}
+
+function audit(action, details) {
+  const data = loadData();
+  data.auditLog.unshift({
+    timestamp: new Date().toISOString(),
+    action,
+    details: details || '',
+  });
+  if (data.auditLog.length > 500) data.auditLog = data.auditLog.slice(0, 500);
+  saveData(data);
+}
+
+function getCustomerName(data, customerId) {
+  const c = data.customers.find(x => x.id === customerId);
+  return c ? c.name : '-';
+}
+
+// ============================================================
+// INVOICE NUMBERING — RC-YYYY-NNNN
+// VERIFICER MED REVISOR: nummersekvens
+// ============================================================
+function getNextInvoiceNumber(data) {
+  const year = new Date().getFullYear();
+  if (data.nextInvoiceYear !== year) {
+    data.nextInvoiceYear = year;
+    data.nextInvoiceSeq = 1;
+  }
+  const num = `RC-${year}-${String(data.nextInvoiceSeq).padStart(4, '0')}`;
+  data.nextInvoiceSeq++;
+  return num;
+}
+
+// KREDITNOTA NUMMERERING — KN-YYYY-NNNN
+function getNextCreditNoteNumber(data) {
+  const year = new Date().getFullYear();
+  if (data.nextCreditNoteYear !== year) {
+    data.nextCreditNoteYear = year;
+    data.nextCreditNoteSeq = 1;
+  }
+  const num = `KN-${year}-${String(data.nextCreditNoteSeq || 1).padStart(4, '0')}`;
+  data.nextCreditNoteSeq = (data.nextCreditNoteSeq || 1) + 1;
+  return num;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentView = 'dashboard';
+let invoiceFilter = '';
+
+function showView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'customers') renderCustomers();
+  if (name === 'invoices') renderInvoices();
+  if (name === 'reminders') renderReminders();
+  if (name === 'settings') renderSettings();
+  if (name === 'export') {}
+  updateSidebarOrg();
+}
+
+function updateSidebarOrg() {
+  const data = loadData();
+  document.getElementById('sidebarOrgName').textContent = data.settings.org_name || 'Charlottenlund Rotary Charity';
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const data = loadData();
+  const inv = data.invoices;
+  const today = new Date().toISOString().split('T')[0];
+
+  const open = inv.filter(i => i.status === 'issued');
+  const paid = inv.filter(i => i.status === 'paid');
+  const drafts = inv.filter(i => i.status === 'draft');
+  const overdue = open.filter(i => i.due_date && i.due_date < today);
+  const outstanding = open.reduce((s, i) => s + i.total, 0);
+  const paidTotal = paid.reduce((s, i) => s + i.total, 0);
+
+  document.getElementById('dashboardStats').innerHTML = `
+    <div class="stat-card blue"><div class="stat-label">Udestående</div>
+      <div class="stat-value">${fmtMoney(outstanding)}</div><div class="stat-sub">${open.length} åbne fakturaer</div></div>
+    <div class="stat-card red"><div class="stat-label">Forfaldne</div>
+      <div class="stat-value">${overdue.length}</div><div class="stat-sub">fakturaer overskredet</div></div>
+    <div class="stat-card green"><div class="stat-label">Betalt i alt</div>
+      <div class="stat-value">${fmtMoney(paidTotal)}</div><div class="stat-sub">${paid.length} fakturaer</div></div>
+    <div class="stat-card amber"><div class="stat-label">Kladder</div>
+      <div class="stat-value">${drafts.length}</div><div class="stat-sub">afventer udstedelse</div></div>
+  `;
+
+  const recent = [...inv].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 10);
+  document.getElementById('dashboardInvoices').innerHTML = recent.length === 0
+    ? '<tr><td colspan="5" class="text-center" style="padding:32px;color:var(--gray-400)">Ingen fakturaer endnu</td></tr>'
+    : recent.map(i => `<tr>
+      <td><span class="clickable" onclick="openInvoiceDetail(${i.id})">${i.invoice_number || 'Kladde #' + i.id}</span></td>
+      <td>${getCustomerName(data, i.customer_id)}</td>
+      <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+      <td class="text-right font-medium">${fmtMoney(i.total)} DKK</td>
+      <td>${i.due_date || '-'}</td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+function renderCustomers() {
+  const data = loadData();
+  const showArchived = document.getElementById('showArchivedCustomers')?.checked;
+  const list = data.customers.filter(c => showArchived ? c.archived : !c.archived);
+  document.getElementById('customerTable').innerHTML = list.length === 0
+    ? `<tr><td colspan="5" class="text-center" style="padding:32px;color:var(--gray-400)">${showArchived ? 'Ingen arkiverede kunder' : 'Ingen kunder endnu'}</td></tr>`
+    : list.map(c => `<tr>
+      <td class="font-medium" style="color:var(--navy-900)">${esc(c.name)}</td>
+      <td>${esc(c.email || '-')}</td>
+      <td>${esc(c.cvr || '-')}</td>
+      <td>${esc(c.phone || '-')}</td>
+      <td class="text-right">
+        <button class="btn btn-secondary btn-sm" onclick="openCustomerModal(${c.id})" style="margin-right:4px">Rediger</button>
+        <button class="btn btn-sm" style="color:var(--gray-500);background:none;border:none" onclick="toggleArchiveCustomer(${c.id})">
+          ${c.archived ? 'Genaktiver' : 'Arkivér'}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+function openCustomerModal(id) {
+  const modal = document.getElementById('customerModal');
+  if (id) {
+    const data = loadData();
+    const c = data.customers.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('customerModalTitle').textContent = 'Rediger kunde';
+    document.getElementById('cust_editing_id').value = id;
+    document.getElementById('cust_name').value = c.name || '';
+    document.getElementById('cust_address').value = c.address || '';
+    document.getElementById('cust_email').value = c.email || '';
+    document.getElementById('cust_cvr').value = c.cvr || '';
+    document.getElementById('cust_phone').value = c.phone || '';
+    document.getElementById('cust_contact').value = c.contact_person || '';
+    document.getElementById('cust_notes').value = c.notes || '';
+  } else {
+    document.getElementById('customerModalTitle').textContent = 'Ny kunde';
+    document.getElementById('cust_editing_id').value = '';
+    ['cust_name','cust_address','cust_email','cust_cvr','cust_phone','cust_contact','cust_notes'].forEach(id => document.getElementById(id).value = '');
+  }
+  modal.style.display = 'flex';
+  document.getElementById('cust_name').focus();
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+function saveCustomer(e) {
+  e.preventDefault();
+  const data = loadData();
+  const editId = document.getElementById('cust_editing_id').value;
+  const obj = {
+    name: document.getElementById('cust_name').value.trim(),
+    address: document.getElementById('cust_address').value.trim(),
+    email: document.getElementById('cust_email').value.trim(),
+    cvr: document.getElementById('cust_cvr').value.trim(),
+    phone: document.getElementById('cust_phone').value.trim(),
+    contact_person: document.getElementById('cust_contact').value.trim(),
+    notes: document.getElementById('cust_notes').value.trim(),
+  };
+  if (editId) {
+    const idx = data.customers.findIndex(c => c.id === parseInt(editId));
+    if (idx >= 0) {
+      data.customers[idx] = { ...data.customers[idx], ...obj, updated_at: new Date().toISOString() };
+      audit('customer_updated', obj.name);
+    }
+  } else {
+    obj.id = genId(data);
+    obj.archived = false;
+    obj.created_at = new Date().toISOString();
+    obj.updated_at = obj.created_at;
+    data.customers.push(obj);
+    audit('customer_created', obj.name);
+  }
+  saveData(data);
+  closeCustomerModal();
+  renderCustomers();
+}
+
+function toggleArchiveCustomer(id) {
+  const data = loadData();
+  const c = data.customers.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm(c.archived ? `Genaktiver "${c.name}"?` : `Arkivér "${c.name}"?`)) return;
+  c.archived = !c.archived;
+  c.updated_at = new Date().toISOString();
+  saveData(data);
+  audit(c.archived ? 'customer_archived' : 'customer_unarchived', c.name);
+  renderCustomers();
+}
+
+// ============================================================
+// INVOICES LIST
+// ============================================================
+function renderInvoices() {
+  const data = loadData();
+  const filters = ['', 'draft', 'issued', 'paid', 'cancelled'];
+  const labels = { '': 'Alle', draft: 'Kladde', issued: 'Udstedt', paid: 'Betalt', cancelled: 'Annulleret' };
+
+  document.getElementById('invoiceFilters').innerHTML = filters.map(f =>
+    `<button class="filter-btn ${invoiceFilter === f ? 'active' : ''}" onclick="invoiceFilter='${f}';renderInvoices()">${labels[f]}</button>`
+  ).join('');
+
+  let list = [...data.invoices];
+  if (invoiceFilter) list = list.filter(i => i.status === invoiceFilter);
+  list.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  document.getElementById('invoiceTable').innerHTML = list.length === 0
+    ? '<tr><td colspan="6" class="text-center" style="padding:32px;color:var(--gray-400)">Ingen fakturaer</td></tr>'
+    : list.map(i => `<tr>
+      <td><span class="clickable" onclick="openInvoiceDetail(${i.id})">${i.invoice_number || 'Kladde #' + i.id}</span></td>
+      <td>${getCustomerName(data, i.customer_id)}</td>
+      <td>${i.invoice_date || '-'}</td>
+      <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+      <td class="text-right font-medium">${fmtMoney(i.total)} DKK</td>
+      <td>${i.due_date || '-'}</td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// INVOICE CREATOR / EDITOR
+// ============================================================
+function openInvoiceCreator(editId) {
+  const data = loadData();
+
+  // Populate customer dropdown
+  const sel = document.getElementById('inv_customer');
+  const activeCustomers = data.customers.filter(c => !c.archived);
+  sel.innerHTML = '<option value="">Vælg kunde...</option>' +
+    activeCustomers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+
+  if (editId) {
+    const inv = data.invoices.find(i => i.id === editId);
+    if (!inv || inv.status !== 'draft') return;
+    document.getElementById('invoiceFormTitle').textContent = 'Rediger kladde';
+    document.getElementById('invoiceSubmitBtn').textContent = 'Gem kladde';
+    document.getElementById('inv_editing_id').value = editId;
+    document.getElementById('inv_customer').value = inv.customer_id;
+    document.getElementById('inv_date').value = inv.invoice_date || '';
+    document.getElementById('inv_delivery').value = inv.delivery_date || '';
+    document.getElementById('inv_due').value = inv.due_date || '';
+    document.getElementById('inv_terms').value = inv.payment_terms || 'Netto 14 dage';
+    document.getElementById('inv_vat').value = inv.vat_rate;
+    document.getElementById('inv_vat_note').value = inv.vat_note || '';
+    document.getElementById('inv_notes').value = inv.notes || '';
+    onVatChange();
+
+    // Load line items
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    (inv.items || []).forEach(item => addLineItem(item));
+    if (!inv.items || inv.items.length === 0) addLineItem();
+  } else {
+    document.getElementById('invoiceFormTitle').textContent = 'Ny faktura';
+    document.getElementById('invoiceSubmitBtn').textContent = 'Opret kladde';
+    document.getElementById('inv_editing_id').value = '';
+    document.getElementById('inv_date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inv_delivery').value = '';
+    document.getElementById('inv_due').value = '';
+    document.getElementById('inv_terms').value = 'Netto 14 dage';
+    document.getElementById('inv_vat').value = '25';
+    document.getElementById('inv_vat_note').value = '';
+    document.getElementById('inv_notes').value = '';
+    onVatChange();
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    addLineItem();
+  }
+  recalcInvoice();
+  showView('invoice-form');
+}
+
+function addLineItem(item) {
+  const container = document.getElementById('lineItemsContainer');
+  const row = document.createElement('div');
+  row.className = 'line-item-row';
+  row.innerHTML = `
+    <input class="form-input li-desc" placeholder="Beskrivelse" value="${esc(item?.description || '')}">
+    <input type="number" class="form-input li-qty" min="0" step="any" value="${item?.quantity ?? 1}" oninput="recalcInvoice()">
+    <input type="number" class="form-input li-price" min="0" step="0.01" value="${item?.unit_price ?? 0}" oninput="recalcInvoice()">
+    <div class="line-item-total">0,00</div>
+    <button type="button" class="remove-line" onclick="this.parentElement.remove();recalcInvoice()">×</button>
+  `;
+  container.appendChild(row);
+  recalcInvoice();
+}
+
+function onVatChange() {
+  const vat = parseInt(document.getElementById('inv_vat').value);
+  document.getElementById('vatNoteGroup').style.display = vat === 0 ? 'block' : 'none';
+  recalcInvoice();
+}
+
+// VERIFICER MED REVISOR: momsberegning
+function recalcInvoice() {
+  const vatRate = parseInt(document.getElementById('inv_vat').value) || 0;
+  let subtotal = 0;
+  document.querySelectorAll('#lineItemsContainer .line-item-row').forEach(row => {
+    const qty = parseFloat(row.querySelector('.li-qty')?.value) || 0;
+    const price = parseFloat(row.querySelector('.li-price')?.value) || 0;
+    const lineTotal = qty * price;
+    subtotal += lineTotal;
+    const totalEl = row.querySelector('.line-item-total');
+    if (totalEl) totalEl.textContent = fmtMoney(lineTotal);
+  });
+  const vat = subtotal * vatRate / 100;
+  const total = subtotal + vat;
+  document.getElementById('calcSubtotal').textContent = fmtMoney(subtotal) + ' DKK';
+  document.getElementById('calcVatLabel').textContent = `Moms (${vatRate}%)`;
+  document.getElementById('calcVat').textContent = fmtMoney(vat) + ' DKK';
+  document.getElementById('calcTotal').textContent = fmtMoney(total) + ' DKK';
+}
+
+function saveInvoice(e) {
+  e.preventDefault();
+  const data = loadData();
+  const editId = document.getElementById('inv_editing_id').value;
+  const vatRate = parseInt(document.getElementById('inv_vat').value) || 0;
+
+  const items = [];
+  document.querySelectorAll('#lineItemsContainer .line-item-row').forEach(row => {
+    const desc = row.querySelector('.li-desc')?.value?.trim();
+    const qty = parseFloat(row.querySelector('.li-qty')?.value) || 0;
+    const price = parseFloat(row.querySelector('.li-price')?.value) || 0;
+    if (desc) items.push({ description: desc, quantity: qty, unit_price: price, vat_percent: vatRate, line_total: Math.round(qty * price * 100) / 100 });
+  });
+
+  if (items.length === 0) { alert('Tilføj mindst én linje med beskrivelse'); return; }
+
+  const subtotal = Math.round(items.reduce((s, i) => s + i.quantity * i.unit_price, 0) * 100) / 100;
+  const vat_amount = Math.round(subtotal * vatRate / 100 * 100) / 100;
+  const total = Math.round((subtotal + vat_amount) * 100) / 100;
+
+  const obj = {
+    customer_id: parseInt(document.getElementById('inv_customer').value),
+    invoice_date: document.getElementById('inv_date').value,
+    delivery_date: document.getElementById('inv_delivery').value,
+    due_date: document.getElementById('inv_due').value,
+    payment_terms: document.getElementById('inv_terms').value,
+    vat_rate: vatRate,
+    vat_note: document.getElementById('inv_vat_note').value.trim(),
+    notes: document.getElementById('inv_notes').value.trim(),
+    items, subtotal, vat_amount, total,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (editId) {
+    const idx = data.invoices.findIndex(i => i.id === parseInt(editId));
+    if (idx >= 0 && data.invoices[idx].status === 'draft') {
+      data.invoices[idx] = { ...data.invoices[idx], ...obj };
+      saveData(data);
+      audit('invoice_updated', 'Kladde #' + editId);
+      openInvoiceDetail(parseInt(editId));
+    }
+  } else {
+    obj.id = genId(data);
+    obj.status = 'draft';
+    obj.invoice_number = null;
+    obj.created_at = new Date().toISOString();
+    saveData(data);
+    data.invoices.push(obj);
+    saveData(data);
+    audit('invoice_created', 'Kladde #' + obj.id);
+    openInvoiceDetail(obj.id);
+  }
+}
+
+// ============================================================
+// INVOICE DETAIL
+// ============================================================
+function openInvoiceDetail(id) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+
+  let actions = `<button class="btn btn-secondary btn-sm" onclick="downloadPdf(${id})">📄 PDF</button>`;
+
+  if (inv.status === 'draft') {
+    actions += `
+      <button class="btn btn-secondary btn-sm" onclick="openInvoiceCreator(${id})">✏️ Rediger</button>
+      <button class="btn btn-primary btn-sm" onclick="issueInvoice(${id})">📤 Udsted</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${id})">Slet</button>
+    `;
+  }
+  if (inv.status === 'issued') {
+    actions += `
+      <button class="btn btn-gold btn-sm" onclick="openMailClient(${id})">📧 Åbn i Mail</button>
+      <button class="btn btn-success btn-sm" onclick="markPaid(${id})">✅ Betalt</button>
+      <button class="btn btn-secondary btn-sm" onclick="sendReminder(${id})" style="color:#be185d;border-color:#fce7f3;background:#fce7f3">⚠️ Rykker</button>
+      <button class="btn btn-danger btn-sm" onclick="createCreditNote(${id})">📋 Kreditnota</button>
+    `;
+  }
+  if (inv.status === 'paid') {
+    actions += `<button class="btn btn-danger btn-sm" onclick="createCreditNote(${id})">📋 Kreditnota</button>`;
+  }
+
+  const cancelAlert = inv.status === 'cancelled' && inv.cancel_reason
+    ? `<div class="alert alert-red"><strong>Annulleret:</strong> ${esc(inv.cancel_reason)}</div>` : '';
+
+  const vatNote = inv.vat_rate === 0
+    ? `<p style="font-size:12px;color:var(--gray-500);font-style:italic;margin-top:4px">${esc(inv.vat_note || 'Momsfritaget / momsfri opkrævning')}</p>` : '';
+
+  document.getElementById('invoiceDetailContent').innerHTML = `
+    <span class="back-link" onclick="showView('invoices')">← Tilbage til liste</span>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">${inv.invoice_number || 'Kladde #' + inv.id}</h1>
+        <span class="badge badge-${inv.status}" style="margin-top:6px">${statusLabel(inv.status)}</span>
+      </div>
+      <div class="action-bar">${actions}</div>
+    </div>
+    ${cancelAlert}
+    <div class="detail-grid">
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Kunde</div>
+        <div class="detail-value font-medium">${esc(cust.name || '-')}</div>
+        ${cust.address ? `<div class="detail-value">${esc(cust.address)}</div>` : ''}
+        ${cust.email ? `<div class="detail-value">${esc(cust.email)}</div>` : ''}
+        ${cust.cvr ? `<div class="detail-value">CVR: ${esc(cust.cvr)}</div>` : ''}
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Detaljer</div>
+        <div style="font-size:13px;margin-top:4px;line-height:1.8">
+          Fakturadato: ${inv.invoice_date || '-'}<br>
+          ${inv.delivery_date ? 'Levering: ' + inv.delivery_date + '<br>' : ''}
+          Forfald: ${inv.due_date || '-'}<br>
+          Betaling: ${esc(inv.payment_terms || '-')}<br>
+          Moms: ${inv.vat_rate}%
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Beskrivelse</th><th class="text-right">Antal</th><th class="text-right">Pris</th><th class="text-right">Moms %</th><th class="text-right">Total</th></tr></thead>
+          <tbody>
+            ${(inv.items || []).map(item => `<tr>
+              <td>${esc(item.description)}</td>
+              <td class="text-right">${item.quantity}</td>
+              <td class="text-right">${fmtMoney(item.unit_price)}</td>
+              <td class="text-right">${item.vat_percent}%</td>
+              <td class="text-right font-medium">${fmtMoney(item.line_total)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--gray-100);background:var(--gray-50);border-radius:0 0 12px 12px">
+        <div class="total-row"><span>Subtotal ekskl. moms</span><span>${fmtMoney(inv.subtotal)} DKK</span></div>
+        <div class="total-row"><span>Moms (${inv.vat_rate}%)</span><span>${fmtMoney(inv.vat_amount)} DKK</span></div>
+        <div class="total-row grand"><span>Total inkl. moms</span><span>${fmtMoney(inv.total)} DKK</span></div>
+        ${vatNote}
+      </div>
+    </div>
+    ${inv.notes ? `<div class="card" style="padding:16px"><div class="detail-label">Bemærkninger</div><div class="detail-value">${esc(inv.notes)}</div></div>` : ''}
+    ${renderCreditNotesForInvoice(data, inv)}
+    ${inv.reminder_count ? `<div class="card" style="padding:16px;margin-top:16px"><div class="detail-label">Rykkere sendt</div><div class="detail-value">${inv.reminder_count} rykker(e) · Senest: ${inv.last_reminder_date || '-'}</div></div>` : ''}
+  `;
+  showView('invoice-detail');
+}
+
+// ============================================================
+// INVOICE ACTIONS
+// ============================================================
+function issueInvoice(id) {
+  if (!confirm('Udsted denne faktura?\nNummeret kan derefter ikke ændres.')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'draft') return;
+  if (!inv.items || inv.items.length === 0) { alert('Fakturaen skal have mindst én linje'); return; }
+
+  inv.invoice_number = getNextInvoiceNumber(data);
+  inv.status = 'issued';
+  inv.issued_at = new Date().toISOString();
+  if (!inv.invoice_date) inv.invoice_date = new Date().toISOString().split('T')[0];
+  if (!inv.due_date) {
+    const d = new Date(inv.invoice_date);
+    d.setDate(d.getDate() + 14);
+    inv.due_date = d.toISOString().split('T')[0];
+  }
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_issued', inv.invoice_number);
+  openInvoiceDetail(id);
+}
+
+function markPaid(id) {
+  if (!confirm('Markér som betalt?')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'issued') return;
+  inv.status = 'paid';
+  inv.paid_at = new Date().toISOString();
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_paid', inv.invoice_number);
+  openInvoiceDetail(id);
+}
+
+function cancelInvoice(id) {
+  const reason = prompt('Årsag til annullering:');
+  if (reason === null) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status === 'cancelled' || inv.status === 'draft') return;
+  inv.status = 'cancelled';
+  inv.cancelled_at = new Date().toISOString();
+  inv.cancel_reason = reason;
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('invoice_cancelled', (inv.invoice_number || 'Kladde') + ': ' + reason);
+  openInvoiceDetail(id);
+}
+
+function deleteInvoice(id) {
+  if (!confirm('Slet denne kladde?')) return;
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv || inv.status !== 'draft') return;
+  data.invoices = data.invoices.filter(i => i.id !== id);
+  saveData(data);
+  audit('invoice_deleted', 'Kladde #' + id);
+  showView('invoices');
+}
+
+// ============================================================
+// CREDIT NOTES (KREDITNOTAER)
+// VERIFICER MED REVISOR: kreditnota-regler
+// ============================================================
+function createCreditNote(invoiceId) {
+  if (!confirm('Opret kreditnota for denne faktura?\nDette annullerer fakturaen og opretter en kreditnota med negativt beløb.')) return;
+  const data = loadData();
+  if (!data.creditNotes) data.creditNotes = [];
+  const inv = data.invoices.find(i => i.id === invoiceId);
+  if (!inv || !inv.invoice_number) return;
+
+  const cnNumber = getNextCreditNoteNumber(data);
+  const cn = {
+    id: genId(data),
+    credit_note_number: cnNumber,
+    invoice_id: invoiceId,
+    invoice_number: inv.invoice_number,
+    customer_id: inv.customer_id,
+    items: (inv.items || []).map(it => ({ ...it, line_total: -Math.abs(it.line_total), unit_price: -Math.abs(it.unit_price) })),
+    subtotal: -Math.abs(inv.subtotal),
+    vat_amount: -Math.abs(inv.vat_amount),
+    vat_rate: inv.vat_rate,
+    vat_note: inv.vat_note,
+    total: -Math.abs(inv.total),
+    created_at: new Date().toISOString(),
+    notes: 'Kreditnota for faktura ' + inv.invoice_number,
+  };
+
+  data.creditNotes.push(cn);
+
+  // Annullér original faktura
+  inv.status = 'cancelled';
+  inv.cancelled_at = new Date().toISOString();
+  inv.cancel_reason = 'Kreditnota oprettet: ' + cnNumber;
+  inv.credit_note_id = cn.id;
+  inv.updated_at = new Date().toISOString();
+
+  saveData(data);
+  audit('credit_note_created', cnNumber + ' for ' + inv.invoice_number);
+  openCreditNoteDetail(cn.id);
+}
+
+function openCreditNoteDetail(cnId) {
+  const data = loadData();
+  if (!data.creditNotes) return;
+  const cn = data.creditNotes.find(c => c.id === cnId);
+  if (!cn) return;
+  const cust = data.customers.find(c => c.id === cn.customer_id) || {};
+
+  document.getElementById('invoiceDetailContent').innerHTML = `
+    <span class="back-link" onclick="showView('invoices')">← Tilbage til liste</span>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">${cn.credit_note_number}</h1>
+        <span class="badge badge-credit" style="margin-top:6px">Kreditnota</span>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-secondary btn-sm" onclick="downloadCreditNotePdf(${cn.id})">📄 PDF</button>
+        <button class="btn btn-gold btn-sm" onclick="openCreditNoteMailClient(${cn.id})">📧 Åbn i Mail</button>
+      </div>
+    </div>
+    <div class="alert" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e">
+      Kreditnota for faktura <strong>${esc(cn.invoice_number)}</strong>
+    </div>
+    <div class="detail-grid">
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Kunde</div>
+        <div class="detail-value font-medium">${esc(cust.name || '-')}</div>
+        ${cust.address ? `<div class="detail-value">${esc(cust.address)}</div>` : ''}
+        ${cust.email ? `<div class="detail-value">${esc(cust.email)}</div>` : ''}
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="detail-label">Detaljer</div>
+        <div style="font-size:13px;margin-top:4px;line-height:1.8">
+          Kreditnota nr: ${cn.credit_note_number}<br>
+          Dato: ${cn.created_at?.split('T')[0]}<br>
+          Original faktura: ${cn.invoice_number}<br>
+          Moms: ${cn.vat_rate}%
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Beskrivelse</th><th class="text-right">Antal</th><th class="text-right">Pris</th><th class="text-right">Total</th></tr></thead>
+          <tbody>
+            ${(cn.items || []).map(it => `<tr>
+              <td>${esc(it.description)}</td>
+              <td class="text-right">${Math.abs(it.quantity)}</td>
+              <td class="text-right" style="color:var(--red-500)">${fmtMoney(it.unit_price)}</td>
+              <td class="text-right font-medium" style="color:var(--red-500)">${fmtMoney(it.line_total)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--gray-100);background:var(--gray-50);border-radius:0 0 12px 12px">
+        <div class="total-row"><span>Subtotal</span><span style="color:var(--red-500)">${fmtMoney(cn.subtotal)} DKK</span></div>
+        <div class="total-row"><span>Moms</span><span style="color:var(--red-500)">${fmtMoney(cn.vat_amount)} DKK</span></div>
+        <div class="total-row grand"><span>Total kreditnota</span><span style="color:var(--red-500)">${fmtMoney(cn.total)} DKK</span></div>
+      </div>
+    </div>
+  `;
+  showView('invoice-detail');
+}
+
+function renderCreditNotesForInvoice(data, inv) {
+  if (!data.creditNotes) return '';
+  const cns = data.creditNotes.filter(cn => cn.invoice_id === inv.id);
+  if (cns.length === 0) return '';
+  return `<div class="card" style="padding:16px;margin-top:16px">
+    <div class="detail-label">Kreditnotaer</div>
+    ${cns.map(cn => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+      <span class="clickable" onclick="openCreditNoteDetail(${cn.id})">${cn.credit_note_number}</span>
+      <span style="color:var(--red-500);font-weight:500">${fmtMoney(cn.total)} DKK</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ============================================================
+// REMINDERS (RYKKERE)
+// ============================================================
+function renderReminders() {
+  const data = loadData();
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = data.invoices.filter(i => i.status === 'issued' && i.due_date && i.due_date < today);
+  overdue.sort((a, b) => a.due_date.localeCompare(b.due_date));
+
+  document.getElementById('reminderTable').innerHTML = overdue.length === 0
+    ? '<tr><td colspan="7" class="text-center" style="padding:32px;color:var(--gray-400)">Ingen forfaldne fakturaer</td></tr>'
+    : overdue.map(i => {
+      const days = Math.floor((new Date() - new Date(i.due_date)) / 86400000);
+      return `<tr>
+        <td><span class="clickable" onclick="openInvoiceDetail(${i.id})">${i.invoice_number}</span></td>
+        <td>${getCustomerName(data, i.customer_id)}</td>
+        <td>${i.due_date}</td>
+        <td style="color:var(--red-500);font-weight:600">${days} dage</td>
+        <td class="text-right font-medium">${fmtMoney(i.total)} DKK</td>
+        <td>${i.reminder_count || 0}</td>
+        <td class="text-right">
+          <button class="btn btn-sm" style="color:#be185d;border:1px solid #fce7f3;background:#fce7f3" onclick="sendReminder(${i.id})">⚠️ Send rykker</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadReminderPdf(${i.id})">📄 Rykker-PDF</button>
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+function sendReminder(invoiceId) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === invoiceId);
+  if (!inv) return;
+
+  const fee = prompt('Rykkergebyr i DKK (0 = intet gebyr):', '100');
+  if (fee === null) return;
+  const feeAmount = parseFloat(fee) || 0;
+
+  inv.reminder_count = (inv.reminder_count || 0) + 1;
+  inv.last_reminder_date = new Date().toISOString().split('T')[0];
+  inv.last_reminder_fee = feeAmount;
+  inv.updated_at = new Date().toISOString();
+  saveData(data);
+  audit('reminder_sent', inv.invoice_number + ' (rykker #' + inv.reminder_count + ', gebyr: ' + feeAmount + ')');
+
+  // Download rykker-PDF
+  downloadReminderPdf(invoiceId);
+
+  // Åbn mail-app med rykker-tekst
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+  const s = data.settings;
+  if (cust.email) {
+    const days = Math.floor((new Date() - new Date(inv.due_date)) / 86400000);
+    const subject = `Rykker: Faktura ${inv.invoice_number} — ${s.org_name || 'Rotary Charity'}`;
+    const body = `Hej ${cust.name || ''}\n\nVi tillader os hermed at rykke for betaling af faktura ${inv.invoice_number} på ${fmtMoney(inv.total)} DKK.\n\nFakturaen forfaldt den ${inv.due_date} — dvs. for ${days} dage siden.${feeAmount > 0 ? '\n\nDer er tillagt et rykkergebyr på ' + fmtMoney(feeAmount) + ' DKK.' : ''}\n\nVi beder venligst om betaling snarest.\n\nVenlig hilsen\n${s.org_name || 'Rotary Charity'}`;
+    window.location.href = `mailto:${cust.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  if (currentView === 'reminders') renderReminders();
+  else openInvoiceDetail(invoiceId);
+}
+
+// ============================================================
+// MAIL CLIENT (mailto:)
+// ============================================================
+function openMailClient(invoiceId) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === invoiceId);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+  const s = data.settings;
+
+  if (!cust.email) { alert('Kunden har ingen email-adresse.'); return; }
+
+  // Download PDF først
+  downloadPdf(invoiceId);
+
+  const subject = `Faktura ${inv.invoice_number} fra ${s.org_name || 'Rotary Charity'}`;
+  const body = `Hej ${cust.name || ''}\n\nVedhæftet finder du faktura ${inv.invoice_number}.\n\nBetalingsfrist: ${inv.due_date || 'Se faktura'}\n\nKontakt os endelig ved spørgsmål.\n\nVenlig hilsen\n${s.org_name || 'Rotary Charity'}`;
+
+  window.location.href = `mailto:${cust.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  audit('mail_opened', inv.invoice_number + ' til ' + cust.email);
+}
+
+function openCreditNoteMailClient(cnId) {
+  const data = loadData();
+  if (!data.creditNotes) return;
+  const cn = data.creditNotes.find(c => c.id === cnId);
+  if (!cn) return;
+  const cust = data.customers.find(c => c.id === cn.customer_id) || {};
+  const s = data.settings;
+
+  if (!cust.email) { alert('Kunden har ingen email-adresse.'); return; }
+
+  downloadCreditNotePdf(cnId);
+
+  const subject = `Kreditnota ${cn.credit_note_number} fra ${s.org_name || 'Rotary Charity'}`;
+  const body = `Hej ${cust.name || ''}\n\nVedhæftet finder du kreditnota ${cn.credit_note_number} for faktura ${cn.invoice_number}.\n\nBeløbet ${fmtMoney(Math.abs(cn.total))} DKK vil blive tilbageført.\n\nVenlig hilsen\n${s.org_name || 'Rotary Charity'}`;
+
+  window.location.href = `mailto:${cust.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  audit('credit_note_mail_opened', cn.credit_note_number + ' til ' + cust.email);
+}
+
+// ============================================================
+// PDF GENERATION — jsPDF
+// VERIFICER MED REVISOR: at alle lovpligtige felter er med
+// ============================================================
+// ============================================================
+// PDF GENERATION — professionelt A4 layout med logo
+// VERIFICER MED REVISOR: at alle lovpligtige felter er med
+// ============================================================
+const LOGO_CACHE = {};
+let preloadedLogo = null;
+
+function loadLogo(url) {
+  return new Promise((resolve) => {
+    if (!url) { resolve(null); return; }
+    if (LOGO_CACHE[url]) { resolve(LOGO_CACHE[url]); return; }
+    const timeout = setTimeout(() => resolve(null), 3000);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        LOGO_CACHE[url] = canvas.toDataURL('image/png');
+        resolve(LOGO_CACHE[url]);
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => { clearTimeout(timeout); resolve(null); };
+    img.src = url;
+  });
+}
+
+function preloadLogoOnInit() {
+  const data = loadData();
+  const url = data.settings.logo_url || 'https://friisnaes.github.io/crk_charity_logo.png';
+  loadLogo(url).then(d => { preloadedLogo = d; });
+}
+
+function downloadPdf(id) {
+  try {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+  const s = data.settings;
+
+  const logoData = preloadedLogo;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  const W = 210;
+  const H = 297;
+  const ML = 22;
+  const MR = 22;
+  const CW = W - ML - MR;
+  const RX = W - MR;
+
+  const NAVY = [12, 25, 41];
+  const GOLD = [197, 154, 46];
+  const GRAY = [130, 130, 130];
+  const DGRAY = [70, 70, 70];
+  const LIGHT = [248, 249, 251];
+  const WHITE = [255, 255, 255];
+  const RED = [200, 40, 40];
+
+  // ────────────────────────────────────────
+  // HEADER ZONE (y = 18 → 48)
+  // ────────────────────────────────────────
+
+  // Logo — venstre side
+  if (logoData) {
+    try { doc.addImage(logoData, 'PNG', ML, 14, 30, 30); } catch(e) {}
+  }
+  const textX = logoData ? ML + 36 : ML;
+
+  // Foreningsnavn
+  doc.setFontSize(17);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text(s.org_name || 'Charlottenlund Rotary Charity', textX, 24);
+
+  // Adresse + kontakt på én-to linjer
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...GRAY);
+  let hy = 30;
+  if (s.org_address) { doc.text(s.org_address, textX, hy); hy += 4; }
+  const line2 = [
+    s.org_cvr ? 'CVR: ' + s.org_cvr : '',
+    s.org_email || '',
+    s.org_phone ? 'Tlf: ' + s.org_phone : ''
+  ].filter(Boolean).join('  ·  ');
+  if (line2) { doc.text(line2, textX, hy); }
+
+  // FAKTURA / KLADDE — højre side
+  const title = inv.status === 'cancelled' ? 'ANNULLERET' : (inv.invoice_number ? 'FAKTURA' : 'KLADDE');
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...(inv.status === 'cancelled' ? RED : NAVY));
+  doc.text(title, RX, 26, { align: 'right' });
+
+  if (inv.invoice_number) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...GOLD);
+    doc.text(inv.invoice_number, RX, 34, { align: 'right' });
+  }
+
+  // ────────────────────────────────────────
+  // GULD ACCENT-LINJE (y = 52)
+  // ────────────────────────────────────────
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.line(ML, 52, RX, 52);
+
+  // ────────────────────────────────────────
+  // KUNDE + FAKTURA-INFO (y = 62 → ~105)
+  // ────────────────────────────────────────
+  let y = 64;
+
+  // Venstre: Kunde
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...GRAY);
+  doc.text('FAKTURERES TIL', ML, y);
+  y += 7;
+
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text(cust.name || '-', ML, y);
+  y += 6;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...DGRAY);
+  if (cust.address) { doc.text(cust.address, ML, y); y += 5; }
+  if (cust.email) { doc.text(cust.email, ML, y); y += 5; }
+  if (cust.cvr) { doc.text('CVR: ' + cust.cvr, ML, y); y += 5; }
+
+  // Højre: Faktura-detaljer
+  const infoX = 128;
+  const valX = 168;
+  let iy = 64;
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...GRAY);
+  doc.text('FAKTURAOPLYSNINGER', infoX, iy);
+  iy += 8;
+
+  const infoRows = [
+    ['Fakturadato', inv.invoice_date || '-'],
+    inv.delivery_date ? ['Leveringsdato', inv.delivery_date] : null,
+    ['Forfaldsdato', inv.due_date || '-'],
+    ['Betaling', inv.payment_terms || 'Netto 14 dage'],
+    ['Momssats', inv.vat_rate + ' %'],
+  ].filter(Boolean);
+
+  doc.setFontSize(9);
+  infoRows.forEach(([label, val]) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...GRAY);
+    doc.text(label, infoX, iy);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(val, valX, iy);
+    iy += 6;
+  });
+
+  if (inv.status === 'cancelled' && inv.cancel_reason) {
+    iy += 3;
+    doc.setFontSize(8); doc.setTextColor(...RED); doc.setFont('helvetica', 'bold');
+    doc.text('Annulleret: ' + inv.cancel_reason, infoX, iy);
+  }
+
+  // ────────────────────────────────────────
+  // TABEL (starter y = 120)
+  // ────────────────────────────────────────
+  let ty = 120;
+
+  // Kolonne-positioner (absolutte højre-kanter, godt spredt)
+  const colR = { qty: 88, price: 118, vat: 142, total: RX };
+
+  // Tabel-header (navy baggrund)
+  doc.setFillColor(...NAVY);
+  doc.rect(ML, ty - 5, CW, 9, 'F');
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...WHITE);
+  doc.text('Beskrivelse', ML + 4, ty);
+  doc.text('Antal', colR.qty, ty, { align: 'right' });
+  doc.text('Enhedspris', colR.price, ty, { align: 'right' });
+  doc.text('Moms', colR.vat, ty, { align: 'right' });
+  doc.text('Beløb', colR.total, ty, { align: 'right' });
+  ty += 10;
+
+  // Linjer
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(9);
+  let rowIdx = 0;
+
+  (inv.items || []).forEach(item => {
+    if (ty > 235) { doc.addPage(); ty = 25; }
+
+    // Zebra baggrund
+    if (rowIdx % 2 === 1) {
+      doc.setFillColor(...LIGHT);
+      doc.rect(ML, ty - 5, CW, 8, 'F');
+    }
+    rowIdx++;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...DGRAY);
+    doc.text(String(item.description || '').substring(0, 40), ML + 4, ty);
+    doc.text(String(item.quantity), colR.qty, ty, { align: 'right' });
+    doc.text(fmtMoney(item.unit_price), colR.price, ty, { align: 'right' });
+    doc.text(item.vat_percent + '%', colR.vat, ty, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(fmtMoney(item.line_total), colR.total, ty, { align: 'right' });
+    ty += 8;
+  });
+
+  // Tynd linje under tabel
+  ty += 2;
+  doc.setDrawColor(210, 210, 210);
+  doc.setLineWidth(0.3);
+  doc.line(ML, ty, RX, ty);
+
+  // ────────────────────────────────────────
+  // TOTALER (højrestillet)
+  // ────────────────────────────────────────
+  ty += 10;
+  const totLblX = 148;
+  const totValX = RX;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...GRAY);
+  doc.text('Subtotal ekskl. moms', totLblX, ty, { align: 'right' });
+  doc.setTextColor(...NAVY);
+  doc.text(fmtMoney(inv.subtotal) + ' DKK', totValX, ty, { align: 'right' });
+  ty += 7;
+
+  const vatLabel = inv.vat_rate === 0 ? 'Moms: 0 %' : 'Moms (' + inv.vat_rate + '%)';
+  doc.setTextColor(...GRAY);
+  doc.text(vatLabel, totLblX, ty, { align: 'right' });
+  doc.setTextColor(...NAVY);
+  doc.text(fmtMoney(inv.vat_amount) + ' DKK', totValX, ty, { align: 'right' });
+  ty += 8;
+
+  // Guld linje over total
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.7);
+  doc.line(totLblX - 15, ty - 2, RX, ty - 2);
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('Total inkl. moms', totLblX, ty + 3, { align: 'right' });
+  doc.text(fmtMoney(inv.total) + ' DKK', totValX, ty + 3, { align: 'right' });
+  ty += 14;
+
+  // Momsfri note
+  if (inv.vat_rate === 0) {
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text(inv.vat_note || 'Momsfritaget / momsfri opkrævning', ML, ty);
+    ty += 8;
+  }
+
+  // ────────────────────────────────────────
+  // BEMÆRKNINGER (midt-zone)
+  // ────────────────────────────────────────
+  if (inv.notes) {
+    ty += 10;
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
+    doc.text('Bemærkning', ML, ty); ty += 5;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(...DGRAY);
+    const noteLines = doc.splitTextToSize(inv.notes, CW);
+    doc.text(noteLines, ML, ty);
+    ty += noteLines.length * 4 + 4;
+  }
+
+  // ────────────────────────────────────────
+  // BETALINGSOPLYSNINGER (fast placering: y = 215)
+  // Skubbes ned i nederste tredjedel af arket
+  // ────────────────────────────────────────
+  const payY = Math.max(ty + 16, 215);
+
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(ML, payY, CW, 36, 3, 3, 'F');
+
+  // Guld top-linje på betalingsboksen
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(ML, payY, ML + CW, payY);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('Betalingsoplysninger', ML + 8, payY + 8);
+
+  doc.setFontSize(9);
+  let py = payY + 16;
+
+  if (s.org_bank_reg && s.org_bank_account) {
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...DGRAY);
+    doc.text('Bank:', ML + 8, py);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Reg. ' + s.org_bank_reg + '   Konto ' + s.org_bank_account, ML + 28, py);
+
+    // Beløb til højre på samme linje
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
+    doc.text('Beløb: ' + fmtMoney(inv.total) + ' DKK', RX - 8, py, { align: 'right' });
+    py += 6;
+  }
+
+  if (inv.invoice_number) {
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...DGRAY);
+    doc.text('Reference:', ML + 8, py);
+    doc.setFont('helvetica', 'normal');
+    doc.text(inv.invoice_number, ML + 36, py);
+
+    // Forfaldsdato til højre
+    if (inv.due_date) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Forfald: ' + inv.due_date, RX - 8, py, { align: 'right' });
+    }
+  }
+
+  // ────────────────────────────────────────
+  // FOOTER (bund af A4, fast position)
+  // ────────────────────────────────────────
+
+  // Guld linje
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.5);
+  doc.line(ML, H - 16, RX, H - 16);
+
+  // Forenings-info centreret
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 180, 180);
+  const footerParts = [
+    s.org_name,
+    s.org_cvr ? 'CVR ' + s.org_cvr : '',
+    s.org_email
+  ].filter(Boolean).join('  ·  ');
+  doc.text(footerParts, W / 2, H - 10, { align: 'center' });
+
+  // ────────────────────────────────────────
+  // GEM
+  // ────────────────────────────────────────
+  const filename = inv.invoice_number ? `faktura-${inv.invoice_number}.pdf` : `kladde-${inv.id}.pdf`;
+  doc.save(filename);
+  audit('pdf_downloaded', inv.invoice_number || 'Kladde #' + inv.id);
+  } catch(err) { alert('PDF-fejl: ' + err.message); console.error(err); }
+}
+
+// ============================================================
+// CREDIT NOTE PDF — KREDITNOTA
+// ============================================================
+function downloadCreditNotePdf(cnId) {
+  const data = loadData();
+  if (!data.creditNotes) return;
+  const cn = data.creditNotes.find(c => c.id === cnId);
+  if (!cn) return;
+  const cust = data.customers.find(c => c.id === cn.customer_id) || {};
+  const s = data.settings;
+  const logoData = preloadedLogo;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const W = 210, H = 297, ML = 22, MR = 22, CW = W - ML - MR, RX = W - MR;
+
+  // Header med logo
+  if (logoData) { try { doc.addImage(logoData, 'PNG', ML, 14, 30, 30); } catch(e) {} }
+  const textX = logoData ? ML + 36 : ML;
+  doc.setFontSize(17); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text(s.org_name || 'Rotary Charity', textX, 24);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(130,130,130);
+  if (s.org_address) doc.text(s.org_address, textX, 30);
+  const line2 = [s.org_cvr ? 'CVR: '+s.org_cvr : '', s.org_email].filter(Boolean).join('  ·  ');
+  if (line2) doc.text(line2, textX, 34);
+
+  // KREDITNOTA titel
+  doc.setFontSize(28); doc.setFont('helvetica', 'bold'); doc.setTextColor(180,40,40);
+  doc.text('KREDITNOTA', RX, 26, { align: 'right' });
+  doc.setFontSize(12); doc.setTextColor(197,154,46);
+  doc.text(cn.credit_note_number, RX, 34, { align: 'right' });
+
+  doc.setDrawColor(197,154,46); doc.setLineWidth(0.8); doc.line(ML, 52, RX, 52);
+
+  // Kunde
+  let y = 64;
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(130,130,130);
+  doc.text('KREDITERES TIL', ML, y); y += 7;
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text(cust.name || '-', ML, y); y += 6;
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(70,70,70);
+  if (cust.address) { doc.text(cust.address, ML, y); y += 5; }
+  if (cust.email) { doc.text(cust.email, ML, y); y += 5; }
+
+  // Info højre
+  doc.setFontSize(9); let iy = 72;
+  doc.setTextColor(130,130,130); doc.text('Original faktura', 128, iy);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41); doc.text(cn.invoice_number, 168, iy); iy += 6;
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(130,130,130); doc.text('Dato', 128, iy);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41); doc.text(cn.created_at?.split('T')[0] || '-', 168, iy);
+
+  // Tabel
+  let ty = 120;
+  doc.setFillColor(180,40,40); doc.rect(ML, ty-5, CW, 9, 'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(255,255,255);
+  doc.text('Beskrivelse', ML+4, ty); doc.text('Beløb', RX, ty, { align: 'right' }); ty += 10;
+
+  doc.setFontSize(9);
+  (cn.items || []).forEach(it => {
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(70,70,70);
+    doc.text(String(it.description || ''), ML+4, ty);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(180,40,40);
+    doc.text(fmtMoney(it.line_total) + ' DKK', RX, ty, { align: 'right' }); ty += 8;
+  });
+
+  ty += 4; doc.setDrawColor(210,210,210); doc.setLineWidth(0.3); doc.line(ML, ty, RX, ty); ty += 10;
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(180,40,40);
+  doc.text('Total kreditnota', 148, ty, { align: 'right' });
+  doc.text(fmtMoney(cn.total) + ' DKK', RX, ty, { align: 'right' });
+
+  // Footer
+  doc.setDrawColor(197,154,46); doc.setLineWidth(0.5); doc.line(ML, H-16, RX, H-16);
+  doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(180,180,180);
+  doc.text([s.org_name, s.org_cvr ? 'CVR '+s.org_cvr : ''].filter(Boolean).join('  ·  '), W/2, H-10, { align: 'center' });
+
+  doc.save(`kreditnota-${cn.credit_note_number}.pdf`);
+  audit('credit_note_pdf', cn.credit_note_number);
+}
+
+// ============================================================
+// REMINDER PDF — RYKKER
+// ============================================================
+function downloadReminderPdf(invoiceId) {
+  const data = loadData();
+  const inv = data.invoices.find(i => i.id === invoiceId);
+  if (!inv) return;
+  const cust = data.customers.find(c => c.id === inv.customer_id) || {};
+  const s = data.settings;
+  const logoData = preloadedLogo;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const W = 210, H = 297, ML = 22, MR = 22, CW = W - ML - MR, RX = W - MR;
+  const days = Math.floor((new Date() - new Date(inv.due_date)) / 86400000);
+  const fee = inv.last_reminder_fee || 0;
+  const reminderNum = inv.reminder_count || 1;
+
+  // Header
+  if (logoData) { try { doc.addImage(logoData, 'PNG', ML, 14, 30, 30); } catch(e) {} }
+  const textX = logoData ? ML + 36 : ML;
+  doc.setFontSize(17); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text(s.org_name || 'Rotary Charity', textX, 24);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(130,130,130);
+  if (s.org_address) doc.text(s.org_address, textX, 30);
+
+  doc.setFontSize(28); doc.setFont('helvetica', 'bold'); doc.setTextColor(190,24,93);
+  doc.text('RYKKER', RX, 26, { align: 'right' });
+  doc.setFontSize(10); doc.setTextColor(130,130,130);
+  doc.text('Rykker nr. ' + reminderNum + ' · ' + new Date().toISOString().split('T')[0], RX, 34, { align: 'right' });
+
+  doc.setDrawColor(190,24,93); doc.setLineWidth(0.8); doc.line(ML, 52, RX, 52);
+
+  // Kunde
+  let y = 66;
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text(cust.name || '-', ML, y); y += 5;
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(70,70,70);
+  if (cust.address) { doc.text(cust.address, ML, y); y += 5; }
+
+  // Rykker-tekst
+  y = 95;
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(50,50,50);
+  const txt = `Vi tillader os hermed at rykke for betaling af nedenstående faktura, som trods forfaldsdato endnu ikke er registreret betalt.`;
+  const lines = doc.splitTextToSize(txt, CW);
+  doc.text(lines, ML, y); y += lines.length * 5 + 12;
+
+  // Faktura-info boks
+  doc.setFillColor(248,249,251); doc.roundedRect(ML, y, CW, 40, 3, 3, 'F');
+  doc.setDrawColor(190,24,93); doc.setLineWidth(0.5); doc.line(ML, y, ML + CW, y);
+
+  const bx = ML + 8;
+  y += 10;
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text('Faktura nr:', bx, y); doc.setFont('helvetica', 'normal'); doc.text(inv.invoice_number || '-', bx + 35, y);
+  doc.setFont('helvetica', 'bold'); doc.text('Forfaldsdato:', bx + 90, y); doc.setFont('helvetica', 'normal'); doc.text(inv.due_date || '-', bx + 125, y);
+  y += 6;
+  doc.setFont('helvetica', 'bold'); doc.text('Beløb:', bx, y); doc.setFont('helvetica', 'normal'); doc.text(fmtMoney(inv.total) + ' DKK', bx + 35, y);
+  doc.setFont('helvetica', 'bold'); doc.text('Dage forsinket:', bx + 90, y);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(190,24,93); doc.text(days + ' dage', bx + 125, y);
+
+  y += 6;
+  if (fee > 0) {
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+    doc.text('Rykkergebyr:', bx, y); doc.setFont('helvetica', 'normal'); doc.text(fmtMoney(fee) + ' DKK', bx + 35, y);
+  }
+
+  // Total at betale
+  y += 20;
+  doc.setDrawColor(190,24,93); doc.setLineWidth(0.7); doc.line(ML + 80, y - 3, RX, y - 3);
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text('Samlet at betale', 148, y + 1, { align: 'right' });
+  doc.text(fmtMoney(inv.total + fee) + ' DKK', RX, y + 1, { align: 'right' });
+
+  // Betalingsinfo
+  y += 25;
+  doc.setFillColor(248,249,251); doc.roundedRect(ML, y, CW, 24, 3, 3, 'F');
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41);
+  doc.text('Betal venligst til:', ML + 8, y + 8);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(70,70,70);
+  if (s.org_bank_reg && s.org_bank_account) doc.text('Reg. ' + s.org_bank_reg + '  Konto ' + s.org_bank_account, ML + 50, y + 8);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(12,25,41); doc.text('Reference:', ML + 8, y + 16);
+  doc.setFont('helvetica', 'normal'); doc.text(inv.invoice_number || '-', ML + 35, y + 16);
+
+  y += 40;
+  doc.setFontSize(9); doc.setTextColor(100,100,100); doc.setFont('helvetica', 'normal');
+  doc.text('Såfremt betaling allerede er foretaget, bedes denne rykker betragtet som bortfaldet.', ML, y);
+
+  // Footer
+  doc.setDrawColor(197,154,46); doc.setLineWidth(0.5); doc.line(ML, H-16, RX, H-16);
+  doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(180,180,180);
+  doc.text([s.org_name, s.org_cvr ? 'CVR '+s.org_cvr : ''].filter(Boolean).join('  ·  '), W/2, H-10, { align: 'center' });
+
+  doc.save(`rykker-${inv.invoice_number}-nr${reminderNum}.pdf`);
+  audit('reminder_pdf', inv.invoice_number + ' rykker #' + reminderNum);
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  const data = loadData();
+  const s = data.settings;
+  document.getElementById('set_name').value = s.org_name || '';
+  document.getElementById('set_address').value = s.org_address || '';
+  document.getElementById('set_cvr').value = s.org_cvr || '';
+  document.getElementById('set_email').value = s.org_email || '';
+  document.getElementById('set_phone').value = s.org_phone || '';
+  document.getElementById('set_bank_reg').value = s.org_bank_reg || '';
+  document.getElementById('set_bank_account').value = s.org_bank_account || '';
+  document.getElementById('set_logo_url').value = s.logo_url || '';
+  document.getElementById('settingsMsg').innerHTML = '';
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+  const data = loadData();
+  data.settings.org_name = document.getElementById('set_name').value.trim();
+  data.settings.org_address = document.getElementById('set_address').value.trim();
+  data.settings.org_cvr = document.getElementById('set_cvr').value.trim();
+  data.settings.org_email = document.getElementById('set_email').value.trim();
+  data.settings.org_phone = document.getElementById('set_phone').value.trim();
+  data.settings.org_bank_reg = document.getElementById('set_bank_reg').value.trim();
+  data.settings.org_bank_account = document.getElementById('set_bank_account').value.trim();
+  data.settings.logo_url = document.getElementById('set_logo_url').value.trim();
+  saveData(data);
+  audit('settings_updated');
+  updateSidebarOrg();
+  document.getElementById('settingsMsg').innerHTML = '<div class="alert alert-green">Indstillinger gemt</div>';
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+function toggleAuditLog() {
+  const el = document.getElementById('auditLogContainer');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') {
+    const data = loadData();
+    document.getElementById('auditLogTable').innerHTML = data.auditLog.slice(0, 100).map(l =>
+      `<tr><td style="font-size:11px;white-space:nowrap;color:var(--gray-500)">${l.timestamp?.replace('T', ' ').substring(0, 19)}</td>
+       <td style="font-size:12px;font-weight:500">${esc(l.action)}</td>
+       <td style="font-size:12px;color:var(--gray-600);max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(l.details || '-')}</td></tr>`
+    ).join('');
+  }
+}
+
+// ============================================================
+// EXPORT / BACKUP
+// ============================================================
+// VERIFICER MED REVISOR: at CSV-format dækker behov
+function exportCsv() {
+  const data = loadData();
+  const headers = ['Fakturanr', 'Status', 'Kunde', 'Kunde CVR', 'Fakturadato', 'Forfaldsdato', 'Betaling', 'Momssats', 'Subtotal', 'Moms', 'Total', 'Note'];
+  const rows = data.invoices.map(i => {
+    const c = data.customers.find(x => x.id === i.customer_id) || {};
+    return [i.invoice_number || '', i.status, c.name || '', c.cvr || '', i.invoice_date || '', i.due_date || '',
+      i.payment_terms || '', i.vat_rate, i.subtotal, i.vat_amount, i.total, i.notes || ''];
+  });
+  const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.map(csvEsc).join(';'))].join('\n');
+  downloadFile(csv, `fakturaer-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8');
+  audit('export_csv');
+}
+
+function exportBackup() {
+  const data = loadData();
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(json, `rotary-backup-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+  audit('backup_downloaded');
+}
+
+function restoreBackup() {
+  const file = document.getElementById('restoreFile').files[0];
+  if (!file) return;
+  if (!confirm('ADVARSEL: Dette overskriver ALLE nuværende data.\n\nEr du sikker?')) {
+    document.getElementById('restoreFile').value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.customers || !data.invoices || !data.settings) throw new Error('Ugyldig backup-fil');
+      saveData(data);
+      audit('backup_restored');
+      alert('Backup gendannet!');
+      showView('dashboard');
+    } catch (err) {
+      alert('Fejl: Kunne ikke læse backup-filen.\n' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtMoney(n) {
+  return Number(n || 0).toLocaleString('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function statusLabel(s) {
+  return { draft: 'Kladde', issued: 'Udstedt', paid: 'Betalt', cancelled: 'Annulleret' }[s] || s;
+}
+
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function csvEsc(val) {
+  const s = String(val);
+  return (s.includes(';') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderDashboard();
+updateSidebarOrg();
+preloadLogoOnInit();
+</script>
+</body>
+</html>
